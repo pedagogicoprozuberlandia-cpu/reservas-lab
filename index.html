@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerenciamento de Laboratórios — PROZ Educação Uberlândia</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--roxo:#5b3fa0;--roxo-claro:#f0ecfb;--roxo-medio:#d4c5f5;--cinza:#f4f3f0;--cinza-borda:#e2e0db;--texto:#1c1b18;--texto-suave:#6b6860;--branco:#fff;--vermelho:#c0392b;--vermelho-claro:#fdecea;--vermelho-borda:#f5c6c2;--amarelo-claro:#fef9ec;--azul-claro:#e6f1fb;--azul:#185fa5;--laranja-claro:#faeeda;--laranja:#854f0b;--lilas:#eeedfe;--lilas-txt:#534ab7}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--cinza);color:var(--texto);min-height:100vh}
+header{background:var(--roxo);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.logo{color:#fff;font-size:13px;font-weight:600;line-height:1.4}
+.logo span{font-weight:300;opacity:.8}
+.role-switch{display:flex;gap:6px}
+.role-btn{padding:6px 16px;border-radius:20px;border:1.5px solid rgba(255,255,255,.35);background:transparent;color:rgba(255,255,255,.85);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.role-btn.active{background:#fff;color:var(--roxo);border-color:#fff}
+.tabs{display:flex;background:#fff;border-bottom:1px solid var(--cinza-borda);padding:0 20px;overflow-x:auto}
+.tab{font-size:13px;font-family:inherit;padding:12px 16px;cursor:pointer;color:var(--texto-suave);border:none;background:transparent;border-bottom:2px solid transparent;font-weight:400;white-space:nowrap;transition:all .15s}
+.tab.active{color:var(--roxo);border-bottom-color:var(--roxo);font-weight:600}
+.view{display:none;padding:20px;max-width:700px;margin:0 auto}
+.view.active{display:block}
+.sec{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--texto-suave);margin-bottom:12px;margin-top:20px}
+.sec:first-child,.sec.no-top{margin-top:0}
+.card{background:#fff;border:1px solid var(--cinza-borda);border-radius:14px;padding:16px;margin-bottom:14px}
+.fg{margin-bottom:13px}
+label{display:block;font-size:12px;font-weight:500;color:var(--texto-suave);margin-bottom:5px}
+input,select,textarea{width:100%;padding:9px 13px;border:1px solid var(--cinza-borda);border-radius:10px;font-family:inherit;font-size:14px;color:var(--texto);background:#fff;outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--roxo)}
+textarea{height:80px;resize:none}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn-r{width:100%;padding:10px;background:var(--roxo);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;transition:opacity .15s}
+.btn-r:hover:not(:disabled){opacity:.88}
+.btn-r:disabled{opacity:.35;cursor:not-allowed}
+.btn-sm{font-size:12px;padding:5px 14px;border-radius:8px;border:1px solid var(--cinza-borda);background:#fff;color:var(--texto-suave);font-family:inherit;font-weight:500;cursor:pointer;transition:all .15s}
+.btn-conf{border-color:var(--roxo);color:var(--roxo)}.btn-conf:hover{background:var(--roxo);color:#fff}
+.btn-rec{border-color:var(--vermelho);color:var(--vermelho)}.btn-rec:hover{background:var(--vermelho);color:#fff}
+.periodo-g{display:flex;gap:8px}
+.periodo-btn{flex:1;padding:10px 6px;border:1px solid var(--cinza-borda);border-radius:10px;background:#fff;font-family:inherit;font-size:13px;font-weight:500;color:var(--texto-suave);cursor:pointer;text-align:center;transition:all .15s}
+.periodo-btn small{display:block;font-size:11px;opacity:.7;margin-top:2px}
+.periodo-btn.sel{background:var(--roxo);color:#fff;border-color:var(--roxo)}
+.grade{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.gc{border-radius:10px;padding:10px 6px;text-align:center;font-size:13px;font-weight:600}
+.gc-l{background:var(--roxo-claro);border:1px solid var(--roxo-medio);color:var(--roxo)}
+.gc-o{background:var(--vermelho-claro);border:1px solid var(--vermelho-borda);color:var(--vermelho)}
+.gc-p{background:#fef9ec;border:1px solid #f5d87a;color:#8a6a00}
+.gc-s{font-size:11px;font-weight:400;margin-top:2px}
+.gc-n{font-size:10px;margin-top:3px;opacity:.8}
+.aviso{border-radius:10px;padding:12px 14px;font-size:13px;margin-bottom:14px}
+.av-l{background:var(--roxo-claro);border:1px solid var(--roxo-medio);color:var(--roxo)}
+.av-o{background:var(--vermelho-claro);border:1px solid var(--vermelho-borda);color:var(--vermelho)}
+.av-p{background:#fef9ec;border:1px solid #f5d87a;color:#8a6a00}
+.av-title{font-weight:600;margin-bottom:2px}
+.av-sub{font-size:12px;opacity:.85}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap}
+.b-reut{background:var(--azul-claro);color:var(--azul)}
+.b-desc{background:var(--laranja-claro);color:var(--laranja)}
+.b-mane{background:var(--lilas);color:var(--lilas-txt)}
+.b-pend{background:#fef9ec;color:#8a6a00}
+.b-conf{background:var(--roxo-claro);color:var(--roxo)}
+.b-rec{background:var(--vermelho-claro);color:var(--vermelho)}
+.metrics{display:grid;gap:10px;margin-bottom:16px}
+.metric{background:#fff;border:1px solid var(--cinza-borda);border-radius:12px;padding:12px;text-align:center}
+.mv{font-size:22px;font-weight:600;color:var(--roxo)}
+.mv.al{color:var(--vermelho)}
+.ml{font-size:11px;color:var(--texto-suave);margin-top:3px;font-weight:500}
+.subtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.subtab{font-size:12px;padding:5px 14px;border-radius:20px;border:1px solid var(--cinza-borda);background:#fff;color:var(--texto-suave);font-family:inherit;font-weight:500;cursor:pointer;transition:all .15s}
+.subtab.active{background:var(--roxo);color:#fff;border-color:var(--roxo)}
+.alerta-box{background:var(--vermelho-claro);border:1px solid var(--vermelho-borda);border-radius:12px;padding:12px 16px;font-size:13px;color:var(--vermelho);margin-bottom:16px;display:flex;align-items:flex-start;gap:10px}
+.mat-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 0;border-bottom:1px solid var(--cinza-borda)}
+.mat-row:last-child{border-bottom:none;padding-bottom:0}
+.q-ok{background:var(--roxo-claro);color:var(--roxo);border:1px solid var(--roxo-medio);border-radius:8px;padding:4px 12px;font-size:13px;font-weight:600}
+.q-low{background:var(--vermelho-claro);color:var(--vermelho);border:1px solid var(--vermelho-borda);border-radius:8px;padding:4px 12px;font-size:13px;font-weight:600}
+.chk{width:20px;height:20px;border-radius:6px;border:2px solid var(--cinza-borda);background:#fff;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.chk.sel{background:var(--roxo);border-color:var(--roxo)}
+.ck{color:#fff;font-size:12px;font-weight:700}
+.qc{display:flex;align-items:center;gap:6px}
+.qb{width:28px;height:28px;border-radius:8px;border:1px solid var(--cinza-borda);background:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--texto)}
+.qi{width:44px;text-align:center;padding:4px 0;border:1px solid var(--cinza-borda);border-radius:8px;font-family:inherit;font-size:14px;font-weight:600}
+.res-mat{background:var(--roxo-claro);border:1px solid var(--roxo-medio);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:13px;color:var(--roxo)}
+.res-mat strong{font-size:11px;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px}
+.confirm-wrap{text-align:center;padding:32px 16px}
+.confirm-circle{width:64px;height:64px;border-radius:50%;background:var(--roxo-claro);border:2px solid var(--roxo);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px}
+.resumo-box{background:var(--cinza);border-radius:14px;padding:16px;margin-bottom:20px}
+.resumo-row{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--cinza-borda)}
+.resumo-row:last-child{border-bottom:none}
+.pin-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--cinza)}
+.pin-card{background:#fff;border:1px solid var(--cinza-borda);border-radius:20px;padding:32px;width:300px;text-align:center}
+.pin-dots{display:flex;justify-content:center;gap:12px;margin-bottom:24px}
+.pin-dot{width:14px;height:14px;border-radius:50%;background:var(--cinza-borda);transition:background .15s}
+.pin-dot.f{background:var(--roxo)}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.pin-btn{padding:14px 0;font-size:18px;font-weight:500;border:1px solid var(--cinza-borda);border-radius:10px;background:#fff;cursor:pointer;font-family:inherit}
+.pin-btn:hover{background:var(--cinza)}
+.expand-form{margin-top:12px;padding-top:12px;border-top:1px solid var(--cinza-borda)}
+.expand-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.err{font-size:12px;color:var(--vermelho);margin-bottom:6px}
+.excluir-c{background:var(--vermelho-claro);border-radius:10px;padding:12px;margin-top:12px}
+.excluir-c p{font-size:13px;color:var(--vermelho);font-weight:500;margin-bottom:10px}
+.ex-sim{font-size:12px;padding:6px 14px;border-radius:8px;border:none;background:var(--vermelho);color:#fff;font-family:inherit;font-weight:600;cursor:pointer;margin-right:8px}
+.ex-nao{font-size:12px;padding:6px 14px;border-radius:8px;border:1px solid var(--cinza-borda);background:#fff;color:var(--texto-suave);font-family:inherit;cursor:pointer}
+.hist-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--cinza-borda)}
+.hist-row:last-child{border-bottom:none}
+.h-ent{font-size:14px;font-weight:500;color:var(--roxo)}
+.h-sai{font-size:14px;font-weight:500;color:var(--vermelho)}
+.h-meta{font-size:12px;color:var(--texto-suave);margin-top:3px}
+.loading{text-align:center;padding:32px;color:var(--texto-suave);font-size:13px}
+.empty{text-align:center;padding:40px;color:var(--texto-suave);font-size:13px}
+@media(max-width:500px){.g2{grid-template-columns:1fr}.view{padding:14px}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script>emailjs.init("xBBuBCRplBicMu1PM");</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div id="pin-screen" class="pin-wrap" style="display:none">
+  <div class="pin-card">
+    <div style="font-size:32px;margin-bottom:12px">🔒</div>
+    <div style="font-size:16px;font-weight:600;margin-bottom:6px">Acesso do monitor</div>
+    <div style="font-size:13px;color:var(--texto-suave);margin-bottom:24px">Digite o PIN para entrar</div>
+    <div class="pin-dots">
+      <div class="pin-dot" id="d0"></div><div class="pin-dot" id="d1"></div>
+      <div class="pin-dot" id="d2"></div><div class="pin-dot" id="d3"></div>
+    </div>
+    <div class="pin-grid">
+      <button class="pin-btn" onclick="pd('1')">1</button><button class="pin-btn" onclick="pd('2')">2</button><button class="pin-btn" onclick="pd('3')">3</button>
+      <button class="pin-btn" onclick="pd('4')">4</button><button class="pin-btn" onclick="pd('5')">5</button><button class="pin-btn" onclick="pd('6')">6</button>
+      <button class="pin-btn" onclick="pd('7')">7</button><button class="pin-btn" onclick="pd('8')">8</button><button class="pin-btn" onclick="pd('9')">9</button>
+      <div></div><button class="pin-btn" onclick="pd('0')">0</button><button class="pin-btn" style="font-size:14px" onclick="pa()">⌫</button>
+    </div>
+    <div id="pin-err" style="display:none;font-size:12px;color:var(--vermelho);margin-top:8px">PIN incorreto. Tente novamente.</div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+<header>
+  <div class="logo">Gerenciamento de Laboratórios e Materiais de Enfermagem <span>— PROZ Educação Uberlândia</span></div>
+  <div class="role-switch">
+    <button class="role-btn active" id="btn-tutor" onclick="setRole('tutor')">Tutor</button>
+    <button class="role-btn" id="btn-monitor" onclick="setRole('monitor')">Monitor</button>
+  </div>
+</header>
+<div class="tabs" id="mtabs" style="display:none">
+  <button class="tab active" onclick="setTab('reservas',this)">Reservas</button>
+  <button class="tab" onclick="setTab('estoque',this)">Estoque</button>
+  <button class="tab" onclick="setTab('historico',this)">Histórico de uso</button>
+  <button class="tab" onclick="setTab('tutores',this)">Tutores</button>
+</div>
+
+<!-- TUTOR -->
+<div id="view-tutor" class="view active">
+  <div id="form-res">
+    <div class="sec no-top">Nova solicitação de laboratório</div>
+    <div class="card">
+      <div class="fg"><label>Nome do tutor</label><select id="f-tutor"><option value="">Selecione seu nome...</option></select></div>
+      <div class="g2">
+        <div class="fg"><label>Laboratório</label>
+          <select id="f-lab" onchange="vDisp()">
+            <option value="">Selecione...</option>
+            <option>Laboratório 1</option><option>Laboratório 10</option>
+          </select>
+        </div>
+        <div class="fg"><label>Data</label><input type="date" id="f-data" onchange="vDisp()"></div>
+      </div>
+      <div id="grade-d" style="display:none;margin-bottom:14px">
+        <div style="font-size:12px;color:var(--texto-suave);margin-bottom:8px;font-weight:500">Disponibilidade nesta data:</div>
+        <div class="grade" id="grade-cells"></div>
+      </div>
+      <div class="fg"><label>Período</label>
+        <div class="periodo-g">
+          <button class="periodo-btn" onclick="sPer(this,'Manhã')">Manhã<small>07h–12h</small></button>
+          <button class="periodo-btn" onclick="sPer(this,'Tarde')">Tarde<small>13h–18h</small></button>
+          <button class="periodo-btn" onclick="sPer(this,'Noite')">Noite<small>19h–22h</small></button>
+        </div>
+      </div>
+      <div id="aviso-d" style="display:none" class="aviso"></div>
+      <div class="fg"><label>Disciplina / Atividade</label><input type="text" id="f-disc" placeholder="Ex: Curativo e Lesão de Pele — Turma 2N"></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="sec" style="margin:0">Selecionar materiais</div>
+      <span id="qtd-sel" style="font-size:12px;color:var(--roxo);font-weight:600;display:none"></span>
+    </div>
+    <div id="mats-tutor"><div class="loading">Carregando materiais...</div></div>
+    <div id="res-mat-wrap" style="display:none" class="res-mat"><strong>Resumo dos materiais:</strong><span id="res-mat-txt"></span></div>
+    <div class="card">
+      <div style="margin-bottom:0">
+        <label>Outros materiais <span style="color:var(--texto-suave);font-weight:400">(opcional)</span></label>
+        <textarea id="f-outros" placeholder="Descreva aqui materiais que não estão na lista acima..."></textarea>
+      </div>
+    </div>
+    <button class="btn-r" id="btn-env" onclick="enviar()">Enviar solicitação</button>
+    <div style="height:24px"></div>
+  </div>
+  <div id="confirmacao" style="display:none">
+    <div class="confirm-wrap">
+      <div class="confirm-circle">✓</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:6px">Solicitação enviada!</div>
+      <div style="font-size:13px;color:var(--texto-suave);margin-bottom:24px">O monitor receberá sua reserva e entrará em contato.</div>
+    </div>
+    <div class="resumo-box" id="resumo-env"></div>
+    <button class="btn-r" onclick="novaRes()">+ Nova solicitação</button>
+    <div style="height:24px"></div>
+  </div>
+</div>
+
+<!-- MONITOR RESERVAS -->
+<div id="view-reservas" class="view">
+  <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
+    <div class="metric"><div class="mv" id="m-p">—</div><div class="ml">Pendentes</div></div>
+    <div class="metric"><div class="mv" id="m-c">—</div><div class="ml">Confirmadas</div></div>
+    <div class="metric"><div class="mv" id="m-t">—</div><div class="ml">Total</div></div>
+  </div>
+  <div class="subtabs">
+    <button class="subtab active" onclick="fRes('todos',this)">Todos</button>
+    <button class="subtab" onclick="fRes('Pendente',this)">Pendentes</button>
+    <button class="subtab" onclick="fRes('Confirmada',this)">Confirmadas</button>
+    <button class="subtab" onclick="fRes('Recusada',this)">Recusadas</button>
+  </div>
+  <div class="sec no-top">Solicitações de reserva</div>
+  <div id="lista-res"><div class="loading">Carregando...</div></div>
+</div>
+
+<!-- MONITOR ESTOQUE -->
+<div id="view-estoque" class="view">
+  <div id="al-est" style="display:none" class="alerta-box"><span style="font-size:16px">⚠</span><div id="al-txt"></div></div>
+  <div class="metrics" style="grid-template-columns:repeat(4,1fr)">
+    <div class="metric"><div class="mv" id="e-r">—</div><div class="ml">Reutilizáveis</div></div>
+    <div class="metric"><div class="mv" id="e-d">—</div><div class="ml">Descartáveis</div></div>
+    <div class="metric"><div class="mv" id="e-m">—</div><div class="ml">Manequins</div></div>
+    <div class="metric"><div class="mv al" id="e-a">—</div><div class="ml">⚠ Alertas</div></div>
+  </div>
+  <div class="subtabs">
+    <button class="subtab active" onclick="fMat('Todos',this)">Todos</button>
+    <button class="subtab" onclick="fMat('Reutilizável',this)">Reutilizáveis</button>
+    <button class="subtab" onclick="fMat('Descartável',this)">Descartáveis</button>
+    <button class="subtab" onclick="fMat('Manequim',this)">Manequins</button>
+  </div>
+  <div class="sec no-top">Materiais cadastrados</div>
+  <div class="card" id="lista-mat"><div class="loading">Carregando...</div></div>
+  <div class="sec">Cadastrar novo material</div>
+  <div class="card">
+    <div class="g2">
+      <div class="fg"><label>Nome do material</label><input type="text" id="nm-n" placeholder="Ex: Estetoscópio"></div>
+      <div class="fg"><label>Categoria</label>
+        <select id="nm-c" onchange="toggleMin()">
+          <option>Reutilizável</option><option>Descartável</option><option>Manequim</option>
+        </select>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="fg"><label>Quantidade inicial</label><input type="number" id="nm-q" placeholder="Ex: 10" min="0"></div>
+      <div class="fg" id="nm-min-w" style="display:none"><label>Qtd. mínima para alerta</label><input type="number" id="nm-m" placeholder="Ex: 5" min="0"></div>
+    </div>
+    <button class="btn-r" onclick="cadMat()">Cadastrar material</button>
+  </div>
+  <div class="sec">Registrar entrada de estoque</div>
+  <div class="card">
+    <div class="fg"><label>Material</label><select id="ent-m"><option value="">Selecione...</option></select></div>
+    <div class="g2">
+      <div class="fg"><label>Quantidade recebida</label><input type="number" id="ent-q" placeholder="Ex: 20" min="1"></div>
+      <div class="fg"><label>Observação</label><input type="text" id="ent-o" placeholder="Ex: Compra mensal"></div>
+    </div>
+    <button class="btn-r" onclick="regEntrada()">Registrar entrada</button>
+  </div>
+</div>
+
+<!-- TUTORES -->
+<div id="view-tutores" class="view">
+  <div class="sec no-top">Tutores cadastrados</div>
+  <div class="card" id="lista-tutores"><div class="loading">Carregando...</div></div>
+  <div class="sec">Cadastrar novo tutor</div>
+  <div class="card">
+    <div class="fg"><label>Nome do tutor</label><input type="text" id="nt-nome" placeholder="Ex: Profª Mariana Souza"></div>
+    <div class="fg"><label>E-mail do tutor</label><input type="email" id="nt-email" placeholder="Ex: professor@prozeducacao.com.br"></div>
+    <button class="btn-r" onclick="cadTutor()">Cadastrar tutor</button>
+  </div>
+</div>
+
+<!-- HISTÓRICO -->
+<div id="view-historico" class="view">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+  <div class="sec" style="margin:0">Histórico de uso</div>
+  <button onclick="exportarExcel()" style="padding:7px 16px;background:var(--roxo);color:white;border:none;border-radius:10px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">⬇ Exportar Excel</button>
+</div>
+<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+  <div style="flex:1;min-width:140px">
+    <label style="font-size:12px;color:var(--texto-suave);display:block;margin-bottom:5px">Mês</label>
+    <select id="filt-mes" onchange="carregarHist()" style="width:100%;padding:9px 13px;border:1px solid var(--cinza-borda);border-radius:10px;font-family:inherit;font-size:14px">
+      <option value="">Todos</option>
+      <option value="01">Janeiro</option>
+      <option value="02">Fevereiro</option>
+      <option value="03">Março</option>
+      <option value="04">Abril</option>
+      <option value="05">Maio</option>
+      <option value="06">Junho</option>
+      <option value="07">Julho</option>
+      <option value="08">Agosto</option>
+      <option value="09">Setembro</option>
+      <option value="10">Outubro</option>
+      <option value="11">Novembro</option>
+      <option value="12">Dezembro</option>
+    </select>
+  </div>
+  <div style="flex:1;min-width:120px">
+    <label style="font-size:12px;color:var(--texto-suave);display:block;margin-bottom:5px">Ano</label>
+    <select id="filt-ano" onchange="carregarHist()" style="width:100%;padding:9px 13px;border:1px solid var(--cinza-borda);border-radius:10px;font-family:inherit;font-size:14px">
+      <option value="2025">2025</option>
+      <option value="2026" selected>2026</option>
+      <option value="2027">2027</option>
+    </select>
+  </div>
+</div>
+<div class="card" id="lista-hist"><div class="loading">Carregando...</div></div>
+</div>
+</div>
+
+<script>
+const SB='https://queloginmonubycxbaws.supabase.co';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1ZWxvZ2lubW9udWJ5Y3hiYXdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MDMwOTUsImV4cCI6MjA5MTA3OTA5NX0.nv8j6nQEPPpk4wlfJff-KgfEipKUu-NyZXKCbt0Fz7I';
+const H={'Content-Type':'application/json','apikey':SK,'Authorization':'Bearer '+SK};
+const PIN='1234';
+let role='tutor',pinOk=false,pinAtual='',periodo='',sels={},matsCache=[],resCache=[],fR='todos',fM='Todos';
+
+window.onload=()=>{
+  document.getElementById('f-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('app').style.display='block';
+  carregarMatsTutor();
+  carregarTutoresSelect();
+};
+
+function setRole(r){
+  if(r==='monitor'&&!pinOk){document.getElementById('app').style.display='none';document.getElementById('pin-screen').style.display='flex';return;}
+  role=r;
+  document.getElementById('btn-tutor').classList.toggle('active',r==='tutor');
+  document.getElementById('btn-monitor').classList.toggle('active',r==='monitor');
+  document.getElementById('view-tutor').classList.toggle('active',r==='tutor');
+  document.getElementById('mtabs').style.display=r==='monitor'?'flex':'none';
+  ['reservas','estoque','historico','tutores'].forEach(v=>document.getElementById('view-'+v).classList.remove('active'));
+  if(r==='monitor')setTab('reservas',document.querySelector('.tab'));
+}
+
+function pd(d){
+  if(pinAtual.length>=4)return;
+  pinAtual+=d;upDots();
+  if(pinAtual.length===4){
+    if(pinAtual===PIN){setTimeout(()=>{pinOk=true;pinAtual='';upDots();document.getElementById('pin-screen').style.display='none';document.getElementById('app').style.display='block';role='monitor';document.getElementById('btn-tutor').classList.remove('active');document.getElementById('btn-monitor').classList.add('active');document.getElementById('view-tutor').classList.remove('active');document.getElementById('mtabs').style.display='flex';setTab('reservas',document.querySelector('.tab'));},200);}
+    else{setTimeout(()=>{pinAtual='';upDots();document.getElementById('pin-err').style.display='block';setTimeout(()=>document.getElementById('pin-err').style.display='none',2000);},400);}
+  }
+}
+function pa(){pinAtual=pinAtual.slice(0,-1);upDots();}
+function upDots(){[0,1,2,3].forEach(i=>document.getElementById('d'+i).classList.toggle('f',i<pinAtual.length));}
+
+function setTab(t,btn){
+  ['reservas','estoque','historico','tutores'].forEach(v=>document.getElementById('view-'+v).classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+t).classList.add('active');
+  if(btn)btn.classList.add('active');
+  if(t==='reservas')carregarRes();
+  if(t==='estoque')carregarMats();
+  if(t==='historico')carregarHist();
+  if(t==='tutores')carregarTutores();
+}
+
+async function vDisp(){
+  const lab=document.getElementById('f-lab').value,data=document.getElementById('f-data').value;
+  if(!lab||!data){document.getElementById('grade-d').style.display='none';return;}
+  const r=await fetch(`${SB}/rest/v1/reservas?laboratorio=eq.${encodeURIComponent(lab)}&data=eq.${data}&status=in.(Confirmada,Pendente)&select=periodo,professor,status`,{headers:H});
+  const todas=await r.json();
+  const conf=todas.filter(x=>x.status==='Confirmada');
+  const pend=todas.filter(x=>x.status==='Pendente');
+  const ocu=conf.map(x=>x.periodo);
+  const pendPer=pend.map(x=>x.periodo);
+  document.getElementById('grade-cells').innerHTML=['Manhã','Tarde','Noite'].map(p=>{
+    const o=ocu.includes(p),pe=!o&&pendPer.includes(p);
+    const q=conf.find(x=>x.periodo===p)||pend.find(x=>x.periodo===p);
+    const cls=o?'gc-o':pe?'gc-p':'gc-l';
+    const txt=o?'Ocupado':pe?'Pendente':'Livre';
+    return `<div class="gc ${cls}">${p}<div class="gc-s">${txt}</div>${(o||pe)&&q?`<div class="gc-n">${q.professor}</div>`:''}</div>`;
+  }).join('');
+  document.getElementById('grade-d').style.display='block';
+  if(periodo)showAviso(ocu,conf,pendPer,pend);
+}
+
+function sPer(btn,val){
+  document.querySelectorAll('.periodo-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');periodo=val;
+  const lab=document.getElementById('f-lab').value,data=document.getElementById('f-data').value;
+  if(lab&&data)vDisp();
+}
+
+function showAviso(ocu,conf,pendPer,pend){
+  if(!periodo)return;
+  pendPer=pendPer||[];pend=pend||[];
+  const o=ocu.includes(periodo),pe=!o&&pendPer.includes(periodo);
+  const q=conf.find(x=>x.periodo===periodo)||pend.find(x=>x.periodo===periodo);
+  const el=document.getElementById('aviso-d');
+  el.style.display='block';
+  if(o){
+    el.className='aviso av-o';
+    el.innerHTML=`<div class="av-title">Laboratório já reservado neste período</div><div class="av-sub">Confirmado por: ${q?.professor||''}</div>`;
+    document.getElementById('btn-env').disabled=true;
+    document.getElementById('btn-env').textContent='Horário indisponível';
+  } else if(pe){
+    el.className='aviso av-p';
+    el.innerHTML=`<div class="av-title">Existe uma reserva pendente neste período</div><div class="av-sub">Solicitado por: ${q?.professor||''} — aguardando confirmação do monitor.</div>`;
+    document.getElementById('btn-env').disabled=false;
+    document.getElementById('btn-env').textContent='Enviar solicitação mesmo assim';
+  } else {
+    el.className='aviso av-l';
+    el.innerHTML=`<div class="av-title">Laboratório disponível!</div><div class="av-sub">Você pode enviar a solicitação.</div>`;
+    document.getElementById('btn-env').disabled=false;
+    document.getElementById('btn-env').textContent='Enviar solicitação';
+  }
+}
+
+async function carregarMatsTutor(){
+  const r=await fetch(`${SB}/rest/v1/materiais?select=*&order=categoria,nome`,{headers:H});
+  matsCache=await r.json();renderMatsTutor();
+}
+
+function renderMatsTutor(){
+  const cats=['Reutilizável','Descartável','Manequim'];
+  const nms={Reutilizável:'Materiais reutilizáveis',Descartável:'Materiais descartáveis',Manequim:'Manequins'};
+  let html='';
+  cats.forEach(cat=>{
+    const itens=matsCache.filter(m=>m.categoria===cat);if(!itens.length)return;
+    html+=`<div class="card"><div style="font-size:12px;font-weight:600;color:var(--texto-suave);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">${nms[cat]}</div>`;
+    itens.forEach((m,i)=>{
+      const s=!!sels[m.id],sem=m.quantidade===0;
+      html+=`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;${i<itens.length-1?'border-bottom:1px solid var(--cinza-borda)':''};opacity:${sem?.45:1}">
+        <div class="chk${s?' sel':''}" onclick="${sem?'':'tMat('+m.id+')'}" style="cursor:${sem?'not-allowed':'pointer'}">${s?'<span class="ck">✓</span>':''}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${m.nome}</div>
+          <div style="font-size:11px;color:${m.quantidade<m.quantidade_minima&&cat==='Descartável'?'var(--vermelho)':'var(--texto-suave)'};margin-top:2px">${sem?'Sem estoque':`Disponível: ${m.quantidade} un`}${!sem&&m.quantidade<m.quantidade_minima&&cat!=='Manequim'?' ⚠':''}</div>
+        </div>
+        ${s?`<div class="qc"><button class="qb" onclick="sQtd(${m.id},${(sels[m.id]||1)-1})">−</button><input class="qi" type="number" value="${sels[m.id]||1}" min="1" max="${m.quantidade}" onchange="sQtd(${m.id},this.value)"><button class="qb" onclick="sQtd(${m.id},${(sels[m.id]||1)+1})">+</button></div>`:''}
+      </div>`;
+    });
+    html+='</div>';
+  });
+  document.getElementById('mats-tutor').innerHTML=html||'<div class="empty">Nenhum material cadastrado ainda.</div>';
+  updResumo();
+}
+
+function tMat(id){sels[id]?delete sels[id]:sels[id]=1;renderMatsTutor();}
+function sQtd(id,v){const m=matsCache.find(x=>x.id===id);sels[id]=Math.max(1,Math.min(parseInt(v)||1,m?.quantidade||99));renderMatsTutor();}
+function updResumo(){
+  const ids=Object.keys(sels);
+  const w=document.getElementById('res-mat-wrap'),q=document.getElementById('qtd-sel');
+  if(!ids.length){w.style.display='none';q.style.display='none';return;}
+  document.getElementById('res-mat-txt').textContent=ids.map(id=>{const m=matsCache.find(x=>x.id===parseInt(id));return m?`${sels[id]}x ${m.nome}`:''}).filter(Boolean).join(', ');
+  w.style.display='block';q.style.display='inline';q.textContent=`${ids.length} item${ids.length>1?'s':''} selecionado${ids.length>1?'s':''}`;
+}
+function getMatTxt(){
+  const l=Object.keys(sels).map(id=>{const m=matsCache.find(x=>x.id===parseInt(id));return m?`${sels[id]}x ${m.nome}`:''}).filter(Boolean).join(', ');
+  const o=document.getElementById('f-outros').value.trim();
+  return[l,o?'Outros: '+o:''].filter(Boolean).join(' | ');
+}
+
+async function enviar(){
+  const tutor=document.getElementById('f-tutor').value.trim(),lab=document.getElementById('f-lab').value,data=document.getElementById('f-data').value,disc=document.getElementById('f-disc').value.trim();
+  if(!tutor||!lab||!data||!periodo){alert('Preencha: nome, laboratório, data e período.');return;}
+  const btn=document.getElementById('btn-env');btn.disabled=true;btn.textContent='Enviando...';
+  const mat=getMatTxt();
+  const r=await fetch(`${SB}/rest/v1/reservas`,{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({professor:tutor,laboratorio:lab,data,periodo,disciplina:disc||'—',materiais:mat,status:'Pendente'})});
+  btn.disabled=false;btn.textContent='Enviar solicitação';
+  if(r.ok){
+    const[ano,mes,dia]=data.split('-');
+    showConfirm({tutor,lab,data:`${dia}/${mes}/${ano}`,periodo,disciplina:disc||'—',mat});
+    document.getElementById('f-tutor').value='';document.getElementById('f-lab').value='';document.getElementById('f-data').value=new Date().toISOString().split('T')[0];document.getElementById('f-disc').value='';document.getElementById('f-outros').value='';document.getElementById('grade-d').style.display='none';document.getElementById('aviso-d').style.display='none';document.querySelectorAll('.periodo-btn').forEach(b=>b.classList.remove('sel'));periodo='';sels={};
+  }else{alert('Erro ao enviar. Tente novamente.');}
+}
+
+function showConfirm(d){
+  document.getElementById('form-res').style.display='none';document.getElementById('confirmacao').style.display='block';
+  let h=[['Tutor',d.tutor],['Laboratório',d.lab],['Data',d.data],['Período',d.periodo],['Disciplina',d.disciplina]].map(([l,v])=>`<div class="resumo-row"><span style="color:var(--texto-suave)">${l}</span><span style="font-weight:500;text-align:right;max-width:60%">${v}</span></div>`).join('');
+  if(d.mat)h+=`<div style="font-size:13px;padding:7px 0;border-bottom:1px solid var(--cinza-borda)"><div style="color:var(--texto-suave);margin-bottom:4px">Materiais</div><div style="font-weight:500">${d.mat}</div></div>`;
+  h+=`<div class="resumo-row"><span style="color:var(--texto-suave)">Status</span><span class="badge b-pend">Aguardando confirmação</span></div>`;
+  document.getElementById('resumo-env').innerHTML=h;
+}
+function novaRes(){document.getElementById('form-res').style.display='block';document.getElementById('confirmacao').style.display='none';carregarMatsTutor();carregarTutoresSelect();}
+
+async function carregarRes(){
+  document.getElementById('lista-res').innerHTML='<div class="loading">Carregando...</div>';
+  const r=await fetch(`${SB}/rest/v1/reservas?select=*&order=data.asc,periodo.asc`,{headers:H});
+  const periodoOrder={'Manhã':1,'Tarde':2,'Noite':3};
+  resCache=(await r.json()).sort((a,b)=>{
+    if(a.data<b.data)return -1;if(a.data>b.data)return 1;
+    return (periodoOrder[a.periodo]||4)-(periodoOrder[b.periodo]||4);
+  });
+  renderRes();
+}
+function fRes(f,btn){fR=f;document.querySelectorAll('#view-reservas .subtab').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');renderRes();}
+function renderRes(){
+  document.getElementById('m-p').textContent=resCache.filter(r=>r.status==='Pendente').length;
+  document.getElementById('m-c').textContent=resCache.filter(r=>r.status==='Confirmada').length;
+  document.getElementById('m-t').textContent=resCache.length;
+  const lista=fR==='todos'?resCache:resCache.filter(r=>r.status===fR);
+  if(!lista.length){document.getElementById('lista-res').innerHTML='<div class="empty">Nenhuma solicitação.</div>';return;}
+  document.getElementById('lista-res').innerHTML=lista.map(r=>{
+    const[ano,mes,dia]=(r.data||'').split('-');const dt=r.data?`${dia}/${mes}/${ano}`:'—';
+    const bc=r.status==='Pendente'?'b-pend':r.status==='Confirmada'?'b-conf':'b-rec';
+    const lx=r.status!=='Pendente'?`<button onclick="iniExc('${r.id}')" style="background:transparent;border:1px solid var(--cinza-borda);border-radius:8px;padding:5px 8px;cursor:pointer;color:var(--texto-suave);font-size:15px;line-height:1">🗑</button>`:'';
+    const mat=r.materiais?`<div style="font-size:12px;color:var(--texto-suave);margin-top:10px;padding-top:10px;border-top:1px solid var(--cinza-borda)"><strong style="font-size:11px;text-transform:uppercase;letter-spacing:.04em">Materiais:</strong> ${r.materiais}</div>`:'';
+    const resp=r.monitor?`<div style="font-size:12px;color:var(--roxo);margin-top:4px;font-weight:500">✓ Responsável: ${r.monitor}</div>`:'';
+    const acoes=r.status==='Pendente'?`<div style="display:flex;gap:8px;margin-top:12px"><button class="btn-sm btn-conf" onclick="expAcao('${r.id}')">Confirmar / Recusar</button></div>`:'';
+    return`<div class="card" id="card-${r.id}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div style="flex:1"><div style="font-size:14px;font-weight:600">${r.laboratorio} — ${r.periodo}</div><div style="font-size:12px;color:var(--texto-suave);margin-top:3px">${dt} · ${r.professor}</div><div style="font-size:12px;color:var(--texto-suave);margin-top:2px">${r.disciplina}</div>${resp}</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0"><span class="badge ${bc}">${r.status}</span>${lx}</div>
+      </div>${mat}${acoes}
+      <div id="exp-${r.id}" style="display:none" class="expand-form">
+        <label>Nome do monitor responsável <span style="color:var(--vermelho)">*</span></label>
+        <input type="text" id="nm-${r.id}" placeholder="Ex: Monitor João Silva" style="margin-bottom:4px">
+        <div id="err-${r.id}" class="err" style="display:none">Campo obrigatório.</div>
+        <div class="expand-actions">
+          <button class="btn-sm btn-conf" onclick="confRes('${r.id}','Confirmada')">✓ Confirmar</button>
+          <button class="btn-sm btn-rec" onclick="confRes('${r.id}','Recusada')">✕ Recusar</button>
+          <button class="btn-sm" onclick="cancelExp('${r.id}')">Cancelar</button>
+        </div>
+      </div>
+      <div id="exc-${r.id}" style="display:none" class="excluir-c">
+        <p>Tem certeza que deseja excluir esta reserva?</p>
+        <button class="ex-sim" onclick="excRes('${r.id}')">Sim, excluir</button>
+        <button class="ex-nao" onclick="document.getElementById('exc-${r.id}').style.display='none'">Cancelar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function expAcao(id){document.getElementById('exp-'+id).style.display='block';}
+function cancelExp(id){document.getElementById('exp-'+id).style.display='none';document.getElementById('nm-'+id).value='';document.getElementById('err-'+id).style.display='none';}
+async function confRes(id,status){
+  const nome=document.getElementById('nm-'+id).value.trim();
+  if(!nome){document.getElementById('err-'+id).style.display='block';return;}
+  await fetch(`${SB}/rest/v1/reservas?id=eq.${id}`,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({status,monitor:nome})});
+  // Buscar dados da reserva e tutor para enviar e-mail
+  const rv=resCache.find(r=>String(r.id)===String(id));
+  if(rv){
+    // Se confirmada, desconta os materiais do estoque e registra saída no histórico
+    if(status==='Confirmada' && rv.materiais){
+      await baixarEstoqueDaReserva(rv);
+    }
+    const tr=await fetch(`${SB}/rest/v1/tutores?nome=eq.${encodeURIComponent(rv.professor)}&select=email`,{headers:H});
+    const td=await tr.json();
+    const email=td[0]?.email;
+    if(email){
+      const[ano,mes,dia]=(rv.data||'').split('-');
+      const dataFmt=rv.data?`${dia}/${mes}/${ano}`:rv.data;
+      emailjs.send('service_clxxmy5','template_zvg5y3i',{
+        nome_tutor: rv.professor,
+        email_tutor: email,
+        status: status==='Confirmada'?'CONFIRMADA ✓':'RECUSADA ✗',
+        laboratorio: rv.laboratorio,
+        data: dataFmt||rv.data,
+        periodo: rv.periodo,
+        disciplina: rv.disciplina,
+        monitor: nome
+      }).then(()=>console.log('E-mail enviado!')).catch(e=>console.error('Erro e-mail:',e));
+    }
+  }
+  carregarRes();
+}
+function iniExc(id){document.getElementById('exc-'+id).style.display='block';}
+async function excRes(id){await fetch(`${SB}/rest/v1/reservas?id=eq.${id}`,{method:'DELETE',headers:H});carregarRes();}
+
+async function carregarMats(){
+  const r=await fetch(`${SB}/rest/v1/materiais?select=*&order=categoria,nome`,{headers:H});
+  matsCache=await r.json();renderEst();popSelEnt();
+}
+function fMat(f,btn){fM=f;document.querySelectorAll('#view-estoque .subtab').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');renderEst();}
+function renderEst(){
+  const al=matsCache.filter(m=>m.categoria==='Descartável'&&m.quantidade<m.quantidade_minima);
+  document.getElementById('e-r').textContent=matsCache.filter(m=>m.categoria==='Reutilizável').length;
+  document.getElementById('e-d').textContent=matsCache.filter(m=>m.categoria==='Descartável').length;
+  document.getElementById('e-m').textContent=matsCache.filter(m=>m.categoria==='Manequim').length;
+  document.getElementById('e-a').textContent=al.length;
+  const ae=document.getElementById('al-est');
+  if(al.length){ae.style.display='flex';document.getElementById('al-txt').innerHTML=`<strong>${al.length} material${al.length>1?'is':''} com estoque baixo</strong> — ${al.map(m=>m.nome).join(', ')} ${al.length>1?'estão':'está'} abaixo do mínimo.`;}
+  else ae.style.display='none';
+  const fi=fM==='Todos'?matsCache:matsCache.filter(m=>m.categoria===fM);
+  const bc={Reutilizável:'b-reut',Descartável:'b-desc',Manequim:'b-mane'};
+  if(!fi.length){document.getElementById('lista-mat').innerHTML='<div class="empty">Nenhum material.</div>';return;}
+  document.getElementById('lista-mat').innerHTML=fi.map((m,i)=>{
+    const bx=m.categoria==='Descartável'&&m.quantidade<m.quantidade_minima;
+    return`<div class="mat-row" style="${i===fi.length-1?'border-bottom:none;padding-bottom:0':''}">
+      <div><div style="font-size:14px;font-weight:500">${m.nome}</div><div style="margin-top:4px"><span class="badge ${bc[m.categoria]||''}">${m.categoria}</span></div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="${bx?'q-low':'q-ok'}">${m.quantidade} un${bx?' ⚠':''}</span>
+        <button onclick="excMat(${m.id},'${m.nome}')" style="background:transparent;border:1px solid var(--cinza-borda);border-radius:8px;padding:5px 8px;cursor:pointer;color:var(--texto-suave);font-size:15px;line-height:1" title="Excluir material">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function excMat(id,nome){
+  if(!confirm('Deseja excluir o material "'+nome+'"?'))return;
+  await fetch(`${SB}/rest/v1/materiais?id=eq.${id}`,{method:'DELETE',headers:H});
+  carregarMats();
+}
+function toggleMin(){const c=document.getElementById('nm-c').value;document.getElementById('nm-min-w').style.display=(c==='Manequim'||c==='Reutilizável')?'none':'block';}
+async function cadMat(){
+  const n=document.getElementById('nm-n').value.trim(),c=document.getElementById('nm-c').value,q=parseInt(document.getElementById('nm-q').value)||0,m=(c==='Manequim'||c==='Reutilizável')?0:parseInt(document.getElementById('nm-m').value)||5;
+  if(!n){alert('Informe o nome do material.');return;}
+  await fetch(`${SB}/rest/v1/materiais`,{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({nome:n,categoria:c,quantidade:q,quantidade_minima:m})});
+  document.getElementById('nm-n').value='';document.getElementById('nm-q').value='';document.getElementById('nm-m').value='';
+  carregarMats();
+}
+function popSelEnt(){document.getElementById('ent-m').innerHTML='<option value="">Selecione...</option>'+matsCache.map(m=>`<option value="${m.id}">${m.nome}</option>`).join('');}
+async function regEntrada(){
+  const mi=document.getElementById('ent-m').value,q=parseInt(document.getElementById('ent-q').value)||0,o=document.getElementById('ent-o').value.trim();
+  if(!mi||!q){alert('Selecione o material e informe a quantidade.');return;}
+  const mat=matsCache.find(m=>m.id===parseInt(mi));
+  await fetch(`${SB}/rest/v1/materiais?id=eq.${mi}`,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({quantidade:mat.quantidade+q})});
+  await fetch(`${SB}/rest/v1/movimentacoes`,{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({material_id:parseInt(mi),tipo:'entrada',quantidade:q,observacao:o||'Entrada de estoque'})});
+  document.getElementById('ent-m').value='';document.getElementById('ent-q').value='';document.getElementById('ent-o').value='';
+  carregarMats();
+}
+
+async function baixarEstoqueDaReserva(rv){
+  // rv.materiais tem formato "2x Luvas P, 1x Sonda 14Fr | Outros: texto livre"
+  const parteSelecionados = rv.materiais.split(' | Outros:')[0];
+  if(!parteSelecionados.trim())return;
+  const itens = parteSelecionados.split(',').map(s=>s.trim()).filter(Boolean);
+  const [ano,mes,dia]=(rv.data||'').split('-');
+  const dataFmt = rv.data?`${dia}/${mes}/${ano}`:rv.data;
+  for(const item of itens){
+    const m = item.match(/^(\d+)x\s+(.+)$/);
+    if(!m)continue;
+    const qtd = parseInt(m[1]);
+    const nomeMat = m[2].trim();
+    // Buscar o material pelo nome
+    const r = await fetch(`${SB}/rest/v1/materiais?nome=eq.${encodeURIComponent(nomeMat)}&select=*`,{headers:H});
+    const mats = await r.json();
+    if(!mats.length)continue;
+    const mat = mats[0];
+    const novaQtd = Math.max(0, mat.quantidade - qtd);
+    // Atualiza estoque
+    await fetch(`${SB}/rest/v1/materiais?id=eq.${mat.id}`,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({quantidade:novaQtd})});
+    // Registra movimentação de saída
+    await fetch(`${SB}/rest/v1/movimentacoes`,{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({
+      material_id: mat.id,
+      tipo: 'saida',
+      quantidade: qtd,
+      professor: rv.professor,
+      disciplina: `${rv.laboratorio} — ${dataFmt} (${rv.periodo}) — ${rv.disciplina||''}`
+    })});
+  }
+}
+
+let histCache=[];
+async function carregarHist(){
+  document.getElementById('lista-hist').innerHTML='<div class="loading">Carregando...</div>';
+  const mes=document.getElementById('filt-mes')?.value||'';
+  const ano=document.getElementById('filt-ano')?.value||'';
+  let url=`${SB}/rest/v1/movimentacoes?select=*,materiais(nome,categoria)&order=created_at.desc&limit=200`;
+  if(ano&&mes){
+    const de=`${ano}-${mes}-01`;
+    const ate=`${ano}-${mes}-31`;
+    url+=`&created_at=gte.${de}T00:00:00&created_at=lte.${ate}T23:59:59`;
+  } else if(ano){
+    url+=`&created_at=gte.${ano}-01-01T00:00:00&created_at=lte.${ano}-12-31T23:59:59`;
+  }
+  const r=await fetch(url,{headers:H});
+  histCache=await r.json();
+  if(!histCache.length){document.getElementById('lista-hist').innerHTML='<div class="empty">Nenhum registro para este período.</div>';return;}
+  const bc={Reutilizável:'b-reut',Descartável:'b-desc',Manequim:'b-mane'};
+  document.getElementById('lista-hist').innerHTML=histCache.map((x,i)=>{
+    const cat=x.materiais?.categoria||'',dt=new Date(x.created_at).toLocaleDateString('pt-BR');
+    return`<div class="hist-row" style="${i===histCache.length-1?'border-bottom:none':''}">
+      <div><div class="${x.tipo==='entrada'?'h-ent':'h-sai'}">${x.tipo==='entrada'?'+ ':'− '}${x.quantidade} un · ${x.materiais?.nome||'—'}</div><div class="h-meta">${dt} · ${x.disciplina||x.observacao||'—'}</div></div>
+      <span class="badge ${bc[cat]||''}">${cat}</span>
+    </div>`;
+  }).join('');
+}
+
+function exportarExcel(){
+  if(!histCache.length){alert('Nenhum dado para exportar.');return;}
+  const mes=document.getElementById('filt-mes')?.value||'';
+  const ano=document.getElementById('filt-ano')?.value||'';
+  const meses={'01':'Janeiro','02':'Fevereiro','03':'Março','04':'Abril','05':'Maio','06':'Junho','07':'Julho','08':'Agosto','09':'Setembro','10':'Outubro','11':'Novembro','12':'Dezembro'};
+  const periodo=mes?`${meses[mes]}_${ano}`:ano||'Geral';
+  const dados=histCache.map(x=>({
+    'Data': new Date(x.created_at).toLocaleDateString('pt-BR'),
+    'Material': x.materiais?.nome||'—',
+    'Categoria': x.materiais?.categoria||'—',
+    'Tipo': x.tipo==='entrada'?'Entrada':'Saída',
+    'Quantidade': x.quantidade,
+    'Laboratório / Observação': x.disciplina||x.observacao||'—'
+  }));
+  const ws=XLSX.utils.json_to_sheet(dados);
+  // Ajustar largura das colunas
+  ws['!cols']=[{wch:12},{wch:30},{wch:15},{wch:10},{wch:12},{wch:50}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Histórico');
+  XLSX.writeFile(wb,`Historico_Lab_${periodo}.xlsx`);
+}
+
+
+async function carregarTutoresSelect(){
+  const r=await fetch(`${SB}/rest/v1/tutores?select=*&order=nome`,{headers:H});
+  const t=await r.json();
+  const sel=document.getElementById('f-tutor');
+  sel.innerHTML='<option value="">Selecione seu nome...</option>'+t.map(x=>`<option value="${x.nome}" data-email="${x.email||''}">${x.nome}</option>`).join('');
+}
+
+// TUTORES
+async function carregarTutores(){
+  document.getElementById('lista-tutores').innerHTML='<div class="loading">Carregando...</div>';
+  const r=await fetch(`${SB}/rest/v1/tutores?select=*&order=nome`,{headers:H});
+  const t=await r.json();
+  if(!t.length){document.getElementById('lista-tutores').innerHTML='<div class="empty">Nenhum tutor cadastrado ainda.</div>';return;}
+  document.getElementById('lista-tutores').innerHTML=t.map((x,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;${i===t.length-1?'border-bottom:none':'border-bottom:1px solid var(--cinza-borda)'}">
+      <div>
+        <div style="font-size:14px;font-weight:500">${x.nome}</div>
+        <div style="font-size:12px;color:var(--texto-suave);margin-top:2px">${x.email||'Sem e-mail cadastrado'}</div>
+      </div>
+      <button onclick="excTutor(${x.id})" style="background:transparent;border:1px solid var(--cinza-borda);border-radius:8px;padding:5px 8px;cursor:pointer;color:var(--texto-suave);font-size:15px;line-height:1">🗑</button>
+    </div>`).join('');
+}
+async function cadTutor(){
+  const nome=document.getElementById('nt-nome').value.trim();
+  const email=document.getElementById('nt-email').value.trim();
+  if(!nome){alert('Informe o nome do tutor.');return;}
+  await fetch(`${SB}/rest/v1/tutores`,{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({nome,email})});
+  document.getElementById('nt-nome').value='';
+  document.getElementById('nt-email').value='';
+  carregarTutores();
+  carregarTutoresSelect();
+}
+async function excTutor(id){
+  await fetch(`${SB}/rest/v1/tutores?id=eq.${id}`,{method:'DELETE',headers:H});
+  carregarTutores();
+}
+</script>
+</body>
+</html>
