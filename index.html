@@ -654,7 +654,7 @@ async function carregarHist(){
   document.getElementById('lista-hist').innerHTML='<div class="loading">Carregando...</div>';
   const mes=document.getElementById('filt-mes')?.value||'';
   const ano=document.getElementById('filt-ano')?.value||'';
-  let url=`${SB}/rest/v1/movimentacoes?select=*,materiais(nome,categoria)&order=created_at.desc&limit=200`;
+  let url=`${SB}/rest/v1/movimentacoes?select=*,materiais(nome,categoria)&order=created_at.asc&limit=200`;
   if(ano&&mes){
     const de=`${ano}-${mes}-01`;
     const ate=`${ano}-${mes}-31`;
@@ -665,14 +665,87 @@ async function carregarHist(){
   const r=await fetch(url,{headers:H});
   histCache=await r.json();
   if(!histCache.length){document.getElementById('lista-hist').innerHTML='<div class="empty">Nenhum registro para este período.</div>';return;}
+  
+  // Calcular saldo acumulado por material
+  const saldos={};
+  histCache.forEach(x=>{
+    const nome=x.materiais?.nome||'—';
+    if(!saldos[nome])saldos[nome]=0;
+    saldos[nome]+=x.tipo==='entrada'?x.quantidade:-x.quantidade;
+    x._saldo=saldos[nome];
+  });
+
+  // Calcular resumo por material
+  const resumo={};
+  histCache.forEach(x=>{
+    const nome=x.materiais?.nome||'—';
+    const cat=x.materiais?.categoria||'';
+    if(!resumo[nome])resumo[nome]={nome,cat,entrada:0,saida:0};
+    if(x.tipo==='entrada')resumo[nome].entrada+=x.quantidade;
+    else resumo[nome].saida+=x.quantidade;
+  });
+
   const bc={Reutilizável:'b-reut',Descartável:'b-desc',Manequim:'b-mane'};
-  document.getElementById('lista-hist').innerHTML=histCache.map((x,i)=>{
-    const cat=x.materiais?.categoria||'',dt=new Date(x.created_at).toLocaleDateString('pt-BR');
-    return`<div class="hist-row" style="${i===histCache.length-1?'border-bottom:none':''}">
-      <div><div class="${x.tipo==='entrada'?'h-ent':'h-sai'}">${x.tipo==='entrada'?'+ ':'− '}${x.quantidade} un · ${x.materiais?.nome||'—'}</div><div class="h-meta">${dt} · ${x.disciplina||x.observacao||'—'}</div></div>
-      <span class="badge ${bc[cat]||''}">${cat}</span>
-    </div>`;
-  }).join('');
+  
+  // Resumo por material
+  const resumoHtml=`<div style="margin-bottom:14px">
+    <div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--texto-suave);margin-bottom:10px">Resumo do período</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:var(--cinza)">
+            <th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--texto-suave);font-size:11px;text-transform:uppercase;letter-spacing:.04em">Material</th>
+            <th style="padding:10px 14px;text-align:center;font-weight:600;color:#3B6D11;font-size:11px;text-transform:uppercase">Entradas</th>
+            <th style="padding:10px 14px;text-align:center;font-weight:600;color:var(--vermelho);font-size:11px;text-transform:uppercase">Saídas</th>
+            <th style="padding:10px 14px;text-align:center;font-weight:600;color:var(--roxo);font-size:11px;text-transform:uppercase">Saldo</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${Object.values(resumo).map((m,i,arr)=>`
+          <tr style="border-top:1px solid var(--cinza-borda)">
+            <td style="padding:10px 14px;font-weight:500">${m.nome}<br><span class="badge ${bc[m.cat]||''}" style="margin-top:4px;display:inline-block">${m.cat}</span></td>
+            <td style="padding:10px 14px;text-align:center;color:#3B6D11;font-weight:600">+${m.entrada}</td>
+            <td style="padding:10px 14px;text-align:center;color:var(--vermelho);font-weight:600">−${m.saida}</td>
+            <td style="padding:10px 14px;text-align:center;font-weight:600;color:${m.entrada-m.saida>=0?'var(--roxo)':'var(--vermelho)'}">${m.entrada-m.saida>=0?'+':''}${m.entrada-m.saida}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+
+  // Histórico detalhado (ordem reversa para exibição)
+  const histReverso=[...histCache].reverse();
+  const histHtml=`<div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--texto-suave);margin-bottom:10px">Movimentações detalhadas</div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead>
+        <tr style="background:var(--cinza)">
+          <th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--texto-suave);font-size:11px;text-transform:uppercase">Data</th>
+          <th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--texto-suave);font-size:11px;text-transform:uppercase">Material</th>
+          <th style="padding:10px 14px;text-align:center;font-weight:600;color:var(--texto-suave);font-size:11px;text-transform:uppercase">Tipo</th>
+          <th style="padding:10px 14px;text-align:center;font-weight:600;color:var(--texto-suave);font-size:11px;text-transform:uppercase">Qtd</th>
+          <th style="padding:10px 14px;text-align:center;font-weight:600;color:var(--texto-suave);font-size:11px;text-transform:uppercase">Saldo</th>
+          <th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--texto-suave);font-size:11px;text-transform:uppercase">Observação</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${histReverso.map(x=>{
+          const dt=new Date(x.created_at).toLocaleDateString('pt-BR');
+          const cat=x.materiais?.categoria||'';
+          return`<tr style="border-top:1px solid var(--cinza-borda)">
+            <td style="padding:10px 14px;white-space:nowrap">${dt}</td>
+            <td style="padding:10px 14px;font-weight:500">${x.materiais?.nome||'—'}<br><span class="badge ${bc[cat]||''}" style="margin-top:3px;display:inline-block">${cat}</span></td>
+            <td style="padding:10px 14px;text-align:center"><span style="font-weight:600;color:${x.tipo==='entrada'?'#3B6D11':'var(--vermelho)'}">${x.tipo==='entrada'?'Entrada':'Saída'}</span></td>
+            <td style="padding:10px 14px;text-align:center;font-weight:600;color:${x.tipo==='entrada'?'#3B6D11':'var(--vermelho)'}">${x.tipo==='entrada'?'+':'−'}${x.quantidade}</td>
+            <td style="padding:10px 14px;text-align:center;font-weight:600;color:${x._saldo>=0?'var(--roxo)':'var(--vermelho)'}">${x._saldo}</td>
+            <td style="padding:10px 14px;font-size:12px;color:var(--texto-suave)">${x.disciplina||x.observacao||'—'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>`;
+
+  document.getElementById('lista-hist').innerHTML=resumoHtml+histHtml;
 }
 
 function exportarExcel(){
@@ -681,19 +754,48 @@ function exportarExcel(){
   const ano=document.getElementById('filt-ano')?.value||'';
   const meses={'01':'Janeiro','02':'Fevereiro','03':'Março','04':'Abril','05':'Maio','06':'Junho','07':'Julho','08':'Agosto','09':'Setembro','10':'Outubro','11':'Novembro','12':'Dezembro'};
   const periodo=mes?`${meses[mes]}_${ano}`:ano||'Geral';
-  const dados=histCache.map(x=>({
-    'Data': new Date(x.created_at).toLocaleDateString('pt-BR'),
-    'Material': x.materiais?.nome||'—',
-    'Categoria': x.materiais?.categoria||'—',
-    'Tipo': x.tipo==='entrada'?'Entrada':'Saída',
-    'Quantidade': x.quantidade,
-    'Laboratório / Observação': x.disciplina||x.observacao||'—'
+
+  // Aba 1: Resumo por material
+  const resumo={};
+  histCache.forEach(x=>{
+    const nome=x.materiais?.nome||'—';
+    const cat=x.materiais?.categoria||'';
+    if(!resumo[nome])resumo[nome]={nome,cat,entrada:0,saida:0};
+    if(x.tipo==='entrada')resumo[nome].entrada+=x.quantidade;
+    else resumo[nome].saida+=x.quantidade;
+  });
+  const dadosResumo=Object.values(resumo).map(m=>({
+    'Material': m.nome,
+    'Categoria': m.cat,
+    'Total entradas': m.entrada,
+    'Total saídas': m.saida,
+    'Saldo do período': m.entrada-m.saida
   }));
-  const ws=XLSX.utils.json_to_sheet(dados);
-  // Ajustar largura das colunas
-  ws['!cols']=[{wch:12},{wch:30},{wch:15},{wch:10},{wch:12},{wch:50}];
+  const wsResumo=XLSX.utils.json_to_sheet(dadosResumo);
+  wsResumo['!cols']=[{wch:30},{wch:15},{wch:15},{wch:15},{wch:15}];
+
+  // Aba 2: Movimentações detalhadas com saldo
+  const saldos={};
+  const dadosDetalhes=[...histCache].map(x=>{
+    const nome=x.materiais?.nome||'—';
+    if(!saldos[nome])saldos[nome]=0;
+    saldos[nome]+=x.tipo==='entrada'?x.quantidade:-x.quantidade;
+    return {
+      'Data': new Date(x.created_at).toLocaleDateString('pt-BR'),
+      'Material': nome,
+      'Categoria': x.materiais?.categoria||'—',
+      'Tipo': x.tipo==='entrada'?'Entrada':'Saída',
+      'Quantidade': x.tipo==='entrada'?x.quantidade:-x.quantidade,
+      'Saldo acumulado': saldos[nome],
+      'Laboratório / Observação': x.disciplina||x.observacao||'—'
+    };
+  });
+  const wsDetalhes=XLSX.utils.json_to_sheet(dadosDetalhes);
+  wsDetalhes['!cols']=[{wch:12},{wch:30},{wch:15},{wch:10},{wch:12},{wch:15},{wch:50}];
+
   const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Histórico');
+  XLSX.utils.book_append_sheet(wb,wsResumo,'Resumo');
+  XLSX.utils.book_append_sheet(wb,wsDetalhes,'Movimentações');
   XLSX.writeFile(wb,`Historico_Lab_${periodo}.xlsx`);
 }
 
