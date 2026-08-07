@@ -108,10 +108,17 @@ textarea{height:80px;resize:none}
 .loading{text-align:center;padding:32px;color:rgba(255,255,255,0.7);font-size:13px}
 .empty{text-align:center;padding:40px;color:rgba(255,255,255,0.8);font-size:13px}
 @media(max-width:500px){.g2{grid-template-columns:1fr}.view{padding:14px}}
+.cal-day{border-radius:8px;padding:6px 4px;cursor:pointer;transition:all .15s;min-height:60px;position:relative}
+.cal-day:hover{transform:scale(1.02)}
+.cal-day-num{font-size:13px;font-weight:600;margin-bottom:4px}
+.cal-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin:1px}
+.cal-today{border:2px solid #F47920!important}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script>emailjs.init("xBBuBCRplBicMu1PM");</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
@@ -146,6 +153,7 @@ textarea{height:80px;resize:none}
 </header>
 <div class="tabs" id="mtabs" style="display:none">
   <button class="tab active" onclick="setTab('reservas',this)">Reservas</button>
+  <button class="tab" onclick="setTab('calendario',this)">📅 Calendário</button>
   <button class="tab" onclick="setTab('estoque',this)">Estoque</button>
   <button class="tab" onclick="setTab('historico',this)">Histórico de uso</button>
   <button class="tab" onclick="setTab('tutores',this)">Tutores</button>
@@ -280,6 +288,37 @@ textarea{height:80px;resize:none}
   </div>
 </div>
 
+<!-- HOJE ALERT -->
+<div id="alerta-hoje" style="display:none;margin:16px 20px 0;background:rgba(255,255,255,0.95);border-radius:14px;padding:16px;border-left:4px solid #F47920">
+  <div style="font-size:13px;font-weight:700;color:#6B2D8B;margin-bottom:10px">📌 Reservas de hoje</div>
+  <div id="lista-hoje"></div>
+</div>
+
+<!-- CALENDÁRIO -->
+<div id="view-calendario" class="view">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <div class="sec" style="margin:0">Calendário de reservas</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button onclick="mesAnterior()" style="padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.2);color:white;cursor:pointer;font-size:16px">‹</button>
+      <span id="cal-titulo" style="color:white;font-weight:600;font-size:14px;min-width:130px;text-align:center"></span>
+      <button onclick="mesProximo()" style="padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.2);color:white;cursor:pointer;font-size:16px">›</button>
+    </div>
+  </div>
+  <!-- Legenda -->
+  <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:white"><div style="width:12px;height:12px;border-radius:3px;background:#27ae60"></div>Livre</div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:white"><div style="width:12px;height:12px;border-radius:3px;background:#f39c12"></div>Pendente</div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:white"><div style="width:12px;height:12px;border-radius:3px;background:#e74c3c"></div>Confirmada</div>
+  </div>
+  <div id="cal-grid" style="background:rgba(255,255,255,0.95);border-radius:14px;padding:12px">
+    <div class="loading">Carregando calendário...</div>
+  </div>
+  <!-- Detalhe dia -->
+  <div id="cal-detalhe" style="display:none;margin-top:12px;background:rgba(255,255,255,0.95);border-radius:14px;padding:16px">
+    <div id="cal-detalhe-content"></div>
+  </div>
+</div>
+
 <!-- HISTÓRICO -->
 <div id="view-historico" class="view">
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
@@ -347,7 +386,7 @@ function pd(d){
   if(pinAtual.length>=4)return;
   pinAtual+=d;upDots();
   if(pinAtual.length===4){
-    if(pinAtual===PIN){setTimeout(()=>{pinOk=true;pinAtual='';upDots();document.getElementById('pin-screen').style.display='none';document.getElementById('app').style.display='block';role='monitor';document.getElementById('btn-tutor').classList.remove('active');document.getElementById('btn-monitor').classList.add('active');document.getElementById('view-tutor').classList.remove('active');document.getElementById('mtabs').style.display='flex';setTab('reservas',document.querySelector('.tab'));},200);}
+    if(pinAtual===PIN){setTimeout(()=>{pinOk=true;pinAtual='';upDots();document.getElementById('pin-screen').style.display='none';document.getElementById('app').style.display='block';role='monitor';document.getElementById('btn-tutor').classList.remove('active');document.getElementById('btn-monitor').classList.add('active');document.getElementById('view-tutor').classList.remove('active');document.getElementById('mtabs').style.display='flex';setTab('reservas',document.querySelector('.tab'));verificarHoje();},200);}
     else{setTimeout(()=>{pinAtual='';upDots();document.getElementById('pin-err').style.display='block';setTimeout(()=>document.getElementById('pin-err').style.display='none',2000);},400);}
   }
 }
@@ -355,7 +394,7 @@ function pa(){pinAtual=pinAtual.slice(0,-1);upDots();}
 function upDots(){[0,1,2,3].forEach(i=>document.getElementById('d'+i).classList.toggle('f',i<pinAtual.length));}
 
 function setTab(t,btn){
-  ['reservas','estoque','historico','tutores'].forEach(v=>document.getElementById('view-'+v).classList.remove('active'));
+  ['reservas','estoque','historico','tutores','calendario'].forEach(v=>document.getElementById('view-'+v).classList.remove('active'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+t).classList.add('active');
   if(btn)btn.classList.add('active');
@@ -363,6 +402,7 @@ function setTab(t,btn){
   if(t==='estoque')carregarMats();
   if(t==='historico')carregarHist();
   if(t==='tutores')carregarTutores();
+  if(t==='calendario')renderCalendario();
 }
 
 async function vDisp(){
@@ -838,6 +878,212 @@ async function excTutor(id){
   await fetch(`${SB}/rest/v1/tutores?id=eq.${id}`,{method:'DELETE',headers:H});
   carregarTutores();
 }
+
+// ===== ALERTA DE HOJE =====
+async function verificarHoje(){
+  const hoje=new Date().toISOString().split('T')[0];
+  const r=await fetch(`${SB}/rest/v1/reservas?data=eq.${hoje}&select=*&order=periodo.asc`,{headers:H});
+  const reservasHoje=await r.json();
+  const alertaEl=document.getElementById('alerta-hoje');
+  if(!reservasHoje.length){alertaEl.style.display='none';return;}
+  alertaEl.style.display='block';
+  const periodoIcon={'Manhã':'🌅','Tarde':'☀️','Noite':'🌙'};
+  const statusColor={'Pendente':'#f39c12','Confirmada':'#27ae60','Recusada':'#e74c3c'};
+  document.getElementById('lista-hoje').innerHTML=reservasHoje.map(r=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0ecfb;gap:8px">
+      <div>
+        <div style="font-size:13px;font-weight:600">${periodoIcon[r.periodo]||''} ${r.periodo} — ${r.laboratorio}</div>
+        <div style="font-size:12px;color:#6b6860;margin-top:2px">${r.professor} · ${r.disciplina}</div>
+      </div>
+      <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;background:${statusColor[r.status]||'#ccc'}20;color:${statusColor[r.status]||'#666'};border:1px solid ${statusColor[r.status]||'#ccc'}40;white-space:nowrap">${r.status}</span>
+    </div>`).join('');
+}
+
+// ===== CALENDÁRIO =====
+let calAno=new Date().getFullYear();
+let calMes=new Date().getMonth();
+let calReservas=[];
+
+async function renderCalendario(){
+  const mesStr=String(calMes+1).padStart(2,'0');
+  const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('cal-titulo').textContent=`${meses[calMes]} ${calAno}`;
+  document.getElementById('cal-grid').innerHTML='<div class="loading">Carregando...</div>';
+  document.getElementById('cal-detalhe').style.display='none';
+  const de=`${calAno}-${mesStr}-01`;
+  const ate=`${calAno}-${mesStr}-31`;
+  const r=await fetch(`${SB}/rest/v1/reservas?data=gte.${de}&data=lte.${ate}&select=*`,{headers:H});
+  calReservas=await r.json();
+  desenharCalendario();
+}
+
+function desenharCalendario(){
+  const primeiroDia=new Date(calAno,calMes,1).getDay();
+  const diasNoMes=new Date(calAno,calMes+1,0).getDate();
+  const hoje=new Date();
+  const diasSemana=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  
+  let html=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px">
+    ${diasSemana.map(d=>`<div style="text-align:center;font-size:11px;font-weight:600;color:#6b6860;padding:4px">${d}</div>`).join('')}
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">`;
+  
+  // Empty cells before first day
+  for(let i=0;i<primeiroDia;i++) html+=`<div></div>`;
+  
+  for(let d=1;d<=diasNoMes;d++){
+    const dataStr=`${calAno}-${String(calMes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const resDodia=calReservas.filter(r=>r.data===dataStr);
+    const temConf=resDodia.some(r=>r.status==='Confirmada');
+    const temPend=resDodia.some(r=>r.status==='Pendente');
+    const isHoje=d===hoje.getDate()&&calMes===hoje.getMonth()&&calAno===hoje.getFullYear();
+    
+    let bg='#f8f9fa';
+    if(temConf)bg='#fdecea';
+    else if(temPend)bg='#fef9ec';
+    
+    const labs=['Laboratório 1','Laboratório 10'];
+    const dots=labs.map(lab=>{
+      const res=resDodia.find(r=>r.laboratorio===lab);
+      if(!res)return `<span style="font-size:9px;color:#aaa">${lab.replace('Laboratório ','L')}</span>`;
+      const cor=res.status==='Confirmada'?'#e74c3c':res.status==='Pendente'?'#f39c12':'#aaa';
+      return `<span style="font-size:9px;color:${cor};font-weight:600">${lab.replace('Laboratório ','L')}</span>`;
+    }).join(' ');
+
+    html+=`<div class="cal-day ${isHoje?'cal-today':''}" style="background:${bg};border:1px solid #e2e0db" onclick="verDia('${dataStr}')">
+      <div class="cal-day-num" style="color:${isHoje?'#F47920':'#1c1b18'}">${d}</div>
+      <div style="font-size:9px">${dots}</div>
+      ${resDodia.length?`<div style="font-size:9px;color:#6b6860;margin-top:2px">${resDodia.length} reserva${resDodia.length>1?'s':''}</div>`:''}
+    </div>`;
+  }
+  html+='</div>';
+  document.getElementById('cal-grid').innerHTML=html;
+}
+
+function verDia(data){
+  const res=calReservas.filter(r=>r.data===data);
+  const [ano,mes,dia]=data.split('-');
+  const detalhe=document.getElementById('cal-detalhe');
+  const statusColor={'Pendente':'#f39c12','Confirmada':'#27ae60','Recusada':'#e74c3c'};
+  const periodoIcon={'Manhã':'🌅','Tarde':'☀️','Noite':'🌙'};
+  if(!res.length){
+    detalhe.style.display='block';
+    document.getElementById('cal-detalhe-content').innerHTML=`<div style="font-size:13px;color:#6b6860;text-align:center;padding:12px">Nenhuma reserva em ${dia}/${mes}/${ano}</div>`;
+    return;
+  }
+  detalhe.style.display='block';
+  document.getElementById('cal-detalhe-content').innerHTML=`
+    <div style="font-size:13px;font-weight:700;color:#6B2D8B;margin-bottom:12px">📅 ${dia}/${mes}/${ano}</div>
+    ${res.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0ecfb;gap:8px">
+      <div>
+        <div style="font-size:13px;font-weight:600">${periodoIcon[r.periodo]||''} ${r.periodo} — ${r.laboratorio}</div>
+        <div style="font-size:12px;color:#6b6860;margin-top:2px">${r.professor} · ${r.disciplina}</div>
+        ${r.materiais?`<div style="font-size:11px;color:#6b6860;margin-top:2px">📦 ${r.materiais}</div>`:''}
+      </div>
+      <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;background:${statusColor[r.status]||'#ccc'}20;color:${statusColor[r.status]||'#666'};white-space:nowrap">${r.status}</span>
+    </div>`).join('')}`;
+}
+
+function mesAnterior(){
+  calMes--;if(calMes<0){calMes=11;calAno--;}
+  renderCalendario();
+}
+function mesProximo(){
+  calMes++;if(calMes>11){calMes=0;calAno++;}
+  renderCalendario();
+}
+
+// ===== PDF MENSAL =====
+async function gerarPDF(){
+  if(!histCache.length){alert('Nenhum dado para gerar o PDF. Selecione um período primeiro.');return;}
+  const mes=document.getElementById('filt-mes')?.value||'';
+  const ano=document.getElementById('filt-ano')?.value||'';
+  const meses={'01':'Janeiro','02':'Fevereiro','03':'Março','04':'Abril','05':'Maio','06':'Junho','07':'Julho','08':'Agosto','09':'Setembro','10':'Outubro','11':'Novembro','12':'Dezembro'};
+  const periodo=mes?`${meses[mes]} ${ano}`:ano||'Geral';
+
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+
+  // Header
+  doc.setFillColor(107,45,139);
+  doc.rect(0,0,210,30,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(14);
+  doc.setFont('helvetica','bold');
+  doc.text('Laboratório de Enfermagem — PROZ Educação Uberlândia',14,12);
+  doc.setFontSize(11);
+  doc.setFont('helvetica','normal');
+  doc.text(`Relatório de Consumo de Materiais — ${periodo}`,14,22);
+
+  // Resumo por material
+  const resumo={};
+  histCache.forEach(x=>{
+    const nome=x.materiais?.nome||'—';
+    const cat=x.materiais?.categoria||'';
+    if(!resumo[nome])resumo[nome]={nome,cat,entrada:0,saida:0};
+    if(x.tipo==='entrada')resumo[nome].entrada+=x.quantidade;
+    else resumo[nome].saida+=x.quantidade;
+  });
+
+  doc.setTextColor(107,45,139);
+  doc.setFontSize(11);
+  doc.setFont('helvetica','bold');
+  doc.text('Resumo por Material',14,42);
+
+  doc.autoTable({
+    startY:46,
+    head:[['Material','Categoria','Entradas','Saídas','Saldo']],
+    body:Object.values(resumo).map(m=>[m.nome,m.cat,m.entrada,m.saida,m.entrada-m.saida]),
+    headStyles:{fillColor:[107,45,139],textColor:255,fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[247,238,250]},
+    styles:{fontSize:10},
+    columnStyles:{2:{halign:'center'},3:{halign:'center'},4:{halign:'center'}}
+  });
+
+  // Movimentações detalhadas
+  const finalY=doc.lastAutoTable.finalY+10;
+  doc.setTextColor(107,45,139);
+  doc.setFontSize(11);
+  doc.setFont('helvetica','bold');
+  doc.text('Movimentações Detalhadas',14,finalY);
+
+  const saldos={};
+  const rows=histCache.map(x=>{
+    const nome=x.materiais?.nome||'—';
+    if(!saldos[nome])saldos[nome]=0;
+    saldos[nome]+=x.tipo==='entrada'?x.quantidade:-x.quantidade;
+    return[
+      new Date(x.created_at).toLocaleDateString('pt-BR'),
+      nome,
+      x.tipo==='entrada'?'Entrada':'Saída',
+      x.tipo==='entrada'?`+${x.quantidade}`:`-${x.quantidade}`,
+      saldos[nome],
+      (x.disciplina||x.observacao||'—').substring(0,40)
+    ];
+  });
+
+  doc.autoTable({
+    startY:finalY+4,
+    head:[['Data','Material','Tipo','Qtd','Saldo','Observação']],
+    body:rows,
+    headStyles:{fillColor:[107,45,139],textColor:255,fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[247,238,250]},
+    styles:{fontSize:9},
+    columnStyles:{2:{halign:'center'},3:{halign:'center'},4:{halign:'center'}}
+  });
+
+  // Footer
+  const pageCount=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pageCount;i++){
+    doc.setPage(i);
+    doc.setTextColor(150);
+    doc.setFontSize(8);
+    doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} — Página ${i} de ${pageCount}`,14,290);
+  }
+
+  doc.save(`Relatorio_Lab_${periodo.replace(' ','_')}.pdf`);
+}
+
 </script>
 </body>
 </html>
