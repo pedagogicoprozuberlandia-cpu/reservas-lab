@@ -677,17 +677,19 @@ async function baixarEstoqueDaReserva(rv){
     const mats = await r.json();
     if(!mats.length)continue;
     const mat = mats[0];
-    const novaQtd = Math.max(0, mat.quantidade - qtd);
-    // Atualiza estoque
-    await fetch(`${SB}/rest/v1/materiais?id=eq.${mat.id}`,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({quantidade:novaQtd})});
-    // Registra movimentação de saída
-    await fetch(`${SB}/rest/v1/movimentacoes`,{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({
-      material_id: mat.id,
-      tipo: 'saida',
-      quantidade: qtd,
-      professor: rv.professor,
-      disciplina: `${rv.laboratorio} — ${dataFmt} (${rv.periodo}) — ${rv.disciplina||''}`
-    })});
+    // Descontar apenas materiais Descartáveis
+    if(mat.categoria==='Descartável'){
+      const novaQtd = Math.max(0, mat.quantidade - qtd);
+      await fetch(`${SB}/rest/v1/materiais?id=eq.${mat.id}`,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({quantidade:novaQtd})});
+      // Registra movimentação de saída apenas para descartáveis
+      await fetch(`${SB}/rest/v1/movimentacoes`,{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({
+        material_id: mat.id,
+        tipo: 'saida',
+        quantidade: qtd,
+        professor: rv.professor,
+        disciplina: `${rv.laboratorio} — ${dataFmt} (${rv.periodo}) — ${rv.disciplina||''}`
+      })});
+    }
   }
 }
 
