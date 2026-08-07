@@ -799,7 +799,7 @@ function exportarExcel(){
 
   // Aba 1: Resumo por material
   const resumo={};
-  histCache.forEach(x=>{
+  histCache.filter(x=>x.materiais?.categoria==='Descartável').forEach(x=>{
     const nome=x.materiais?.nome||'—';
     const cat=x.materiais?.categoria||'';
     if(!resumo[nome])resumo[nome]={nome,cat,entrada:0,saida:0};
@@ -818,7 +818,7 @@ function exportarExcel(){
 
   // Aba 2: Movimentações detalhadas com saldo
   const saldos={};
-  const dadosDetalhes=[...histCache].map(x=>{
+  const dadosDetalhes=[...histCache].filter(x=>x.materiais?.categoria==='Descartável').map(x=>{
     const nome=x.materiais?.nome||'—';
     if(!saldos[nome])saldos[nome]=0;
     saldos[nome]+=x.tipo==='entrada'?x.quantidade:-x.quantidade;
@@ -1017,7 +1017,7 @@ async function gerarPDF(){
 
   // Resumo por material
   const resumo={};
-  histCache.forEach(x=>{
+  histCache.filter(x=>x.materiais?.categoria==='Descartável').forEach(x=>{
     const nome=x.materiais?.nome||'—';
     const cat=x.materiais?.categoria||'';
     if(!resumo[nome])resumo[nome]={nome,cat,entrada:0,saida:0};
@@ -1048,7 +1048,7 @@ async function gerarPDF(){
   doc.text('Movimentações Detalhadas',14,finalY);
 
   const saldos={};
-  const rows=histCache.map(x=>{
+  const rows=histCache.filter(x=>x.materiais?.categoria==='Descartável').map(x=>{
     const nome=x.materiais?.nome||'—';
     if(!saldos[nome])saldos[nome]=0;
     saldos[nome]+=x.tipo==='entrada'?x.quantidade:-x.quantidade;
