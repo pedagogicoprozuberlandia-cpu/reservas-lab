@@ -509,9 +509,32 @@ async function enviar(){
   const r=await fetch(`${SB}/rest/v1/reservas`,{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({professor:tutor,laboratorio:lab,data,periodo,disciplina:disc||'—',materiais:mat,status:'Pendente'})});
   btn.disabled=false;btn.textContent='Enviar solicitação';
   if(r.ok){
+    // Descontar descartáveis imediatamente ao reservar
+    if(mat){
+      const parteSels=mat.split(' | Outros:')[0];
+      const itens2=parteSels.split(',').map(s=>s.trim()).filter(Boolean);
+      const[an,ms,di]=(data||'').split('-');
+      const dtFmt=data?di+'/'+ms+'/'+an:data;
+      for(const item2 of itens2){
+        const px=item2.indexOf('x ');
+        if(px<0)continue;
+        const qtd2=parseInt(item2.substring(0,px));
+        const nomeMat2=item2.substring(px+2).trim();
+        const rm=await fetch(SB+'/rest/v1/materiais?nome=eq.'+encodeURIComponent(nomeMat2)+'&select=*',{headers:H});
+        const matsArr=await rm.json();
+        if(!matsArr.length)continue;
+        const mat2=matsArr[0];
+        if(mat2.categoria==='Descartável'){
+          const novaQtd=Math.max(0,mat2.quantidade-qtd2);
+          await fetch(SB+'/rest/v1/materiais?id=eq.'+mat2.id,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({quantidade:novaQtd})});
+          await fetch(SB+'/rest/v1/movimentacoes',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({material_id:mat2.id,tipo:'saida',quantidade:qtd2,professor:tutor,disciplina:lab+' — '+dtFmt+' ('+periodo+') — '+(disc||'')})});
+        }
+      }
+    }
     const[ano,mes,dia]=data.split('-');
     showConfirm({tutor,lab,data:`${dia}/${mes}/${ano}`,periodo,disciplina:disc||'—',mat});
     document.getElementById('f-tutor').value='';document.getElementById('f-lab').value='';document.getElementById('f-data').value=new Date().toISOString().split('T')[0];document.getElementById('f-disc').value='';document.getElementById('f-outros').value='';document.getElementById('grade-d').style.display='none';document.getElementById('aviso-d').style.display='none';document.querySelectorAll('.periodo-btn').forEach(b=>b.classList.remove('sel'));periodo='';sels={};
+    await carregarMatsTutor();
   }else{alert('Erro ao enviar. Tente novamente.');}
 }
 
