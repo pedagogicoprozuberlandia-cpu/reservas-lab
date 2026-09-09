@@ -547,6 +547,66 @@ function showConfirm(d){
 }
 function novaRes(){document.getElementById('form-res').style.display='block';document.getElementById('confirmacao').style.display='none';carregarMatsTutor();carregarTutoresSelect();}
 
+function renderMatTabela(materiais){
+  if(!materiais)return'';
+  const partes=materiais.split(' | Outros:');
+  const selecionados=partes[0].trim();
+  const outros=partes[1]?partes[1].trim():'';
+  
+  // Buscar categoria de cada material no cache
+  function getCat(nome){
+    const m=matsCache.find(x=>x.nome===nome);
+    return m?m.categoria:'';
+  }
+  function chipCor(cat){
+    if(cat==='Descartável')return{bg:'var(--vermelho-claro)',cor:'var(--vermelho)',borda:'var(--vermelho-borda)',txt:'Descartável'};
+    if(cat==='Reutilizável')return{bg:'#EAF3DE',cor:'#3B6D11',borda:'#C0DD97',txt:'Reutilizável'};
+    if(cat==='Manequim')return{bg:'#eeedfe',cor:'#534ab7',borda:'#afa9ec',txt:'Manequim'};
+    return{bg:'#fef9ec',cor:'#8a6a00',borda:'#f5d87a',txt:'Outro'};
+  }
+
+  const linhas=[];
+
+  // Materiais selecionados da lista
+  if(selecionados){
+    selecionados.split(',').map(s=>s.trim()).filter(Boolean).forEach(item=>{
+      const px=item.indexOf('x ');
+      if(px<0)return;
+      const qtd=item.substring(0,px);
+      const nome=item.substring(px+2).trim();
+      const cat=getCat(nome);
+      const c=chipCor(cat);
+      linhas.push(`<tr style="border-bottom:0.5px solid var(--cinza-borda)">
+        <td style="padding:7px 10px"><span style="background:${c.bg};color:${c.cor};border:0.5px solid ${c.borda};border-radius:20px;padding:3px 11px;font-size:12px;font-weight:500">${nome}</span></td>
+        <td style="padding:7px 10px;font-size:12px;color:${c.cor};font-weight:500">${c.txt}</td>
+        <td style="padding:7px 10px;text-align:center;font-weight:700;font-size:15px;color:var(--texto)">${qtd}</td>
+      </tr>`);
+    });
+  }
+
+  // Outros
+  if(outros){
+    linhas.push(`<tr style="background:#fef9ec"><td colspan="3" style="padding:5px 10px;font-size:11px;font-weight:600;color:#8a6a00;text-transform:uppercase;letter-spacing:.05em">Outros (solicitação livre)</td></tr>`);
+    outros.split(',').map(s=>s.trim()).filter(Boolean).forEach(item=>{
+      linhas.push(`<tr style="border-bottom:0.5px solid var(--cinza-borda)">
+        <td style="padding:7px 10px"><span style="background:#fef9ec;color:#8a6a00;border:0.5px solid #f5d87a;border-radius:20px;padding:3px 11px;font-size:12px;font-weight:500">${item}</span></td>
+        <td style="padding:7px 10px;font-size:12px;color:#8a6a00;font-weight:500">Outro</td>
+        <td style="padding:7px 10px;text-align:center;font-size:12px;color:var(--texto-suave)">—</td>
+      </tr>`);
+    });
+  }
+
+  if(!linhas.length)return'';
+  return`<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="background:var(--cinza)">
+      <th style="text-align:left;padding:7px 10px;font-size:11px;font-weight:600;color:var(--texto-suave);text-transform:uppercase;letter-spacing:.04em;border-bottom:0.5px solid var(--cinza-borda)">Material</th>
+      <th style="text-align:left;padding:7px 10px;font-size:11px;font-weight:600;color:var(--texto-suave);text-transform:uppercase;letter-spacing:.04em;border-bottom:0.5px solid var(--cinza-borda);width:110px">Tipo</th>
+      <th style="text-align:center;padding:7px 10px;font-size:11px;font-weight:600;color:var(--texto-suave);text-transform:uppercase;letter-spacing:.04em;border-bottom:0.5px solid var(--cinza-borda);width:55px">Qtd</th>
+    </tr></thead>
+    <tbody>${linhas.join('')}</tbody>
+  </table>`;
+}
+
 async function carregarRes(){
   document.getElementById('lista-res').innerHTML='<div class="loading">Carregando...</div>';
   const r=await fetch(`${SB}/rest/v1/reservas?select=*&order=data.asc,periodo.asc`,{headers:H});
@@ -568,7 +628,8 @@ function renderRes(){
     const[ano,mes,dia]=(r.data||'').split('-');const dt=r.data?`${dia}/${mes}/${ano}`:'—';
     const bc=r.status==='Pendente'?'b-pend':r.status==='Confirmada'?'b-conf':'b-rec';
     const lx=r.status!=='Pendente'?`<button onclick="iniExc('${r.id}')" style="background:transparent;border:1px solid var(--cinza-borda);border-radius:8px;padding:5px 8px;cursor:pointer;color:var(--texto-suave);font-size:15px;line-height:1">🗑</button>`:'';
-    const mat=r.materiais?`<div style="font-size:12px;color:var(--texto-suave);margin-top:10px;padding-top:10px;border-top:1px solid var(--cinza-borda)"><strong style="font-size:11px;text-transform:uppercase;letter-spacing:.04em">Materiais:</strong> ${r.materiais}</div>`:'';
+    const mat=r.materiais?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--cinza-borda)">${renderMatTabela(r.materiais)}</div>`:'';
+
     const resp=r.monitor?`<div style="font-size:12px;color:var(--roxo);margin-top:4px;font-weight:500">✓ Responsável: ${r.monitor}</div>`:'';
     const acoes=r.status==='Pendente'?`<div style="display:flex;gap:8px;margin-top:12px"><button class="btn-sm btn-conf" onclick="expAcao('${r.id}')">Confirmar / Recusar</button></div>`:'';
     return`<div class="card" id="card-${r.id}">
