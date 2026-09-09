@@ -925,7 +925,7 @@ async function carregarHist(){
           <th style="padding:9px 12px;text-align:center;font-weight:600;color:var(--texto-suave);font-size:11px;text-transform:uppercase;border-bottom:0.5px solid var(--cinza-borda);white-space:nowrap">Tipo</th>
           <th style="padding:9px 12px;text-align:center;font-weight:600;color:var(--texto-suave);font-size:11px;text-transform:uppercase;border-bottom:0.5px solid var(--cinza-borda)">Qtd</th>
           <th style="padding:9px 12px;text-align:center;font-weight:600;color:var(--texto-suave);font-size:11px;text-transform:uppercase;border-bottom:0.5px solid var(--cinza-borda)">Saldo</th>
-          <th style="padding:9px 12px;text-align:left;font-weight:600;color:var(--texto-suave);font-size:11px;text-transform:uppercase;border-bottom:0.5px solid var(--cinza-borda)">Aula</th>
+          
         </tr>
       </thead>
       <tbody>
@@ -945,7 +945,7 @@ async function carregarHist(){
             '<td style="padding:9px 12px;text-align:center;font-weight:600;color:' + (x.tipo==='entrada'?'#3B6D11':'var(--vermelho)') + '">' + (x.tipo==='entrada'?'Entrada':'Saída') + '</td>' +
             '<td style="padding:9px 12px;text-align:center;font-weight:700;font-size:14px;color:' + (x.tipo==='entrada'?'#3B6D11':'var(--vermelho)') + '">' + (x.tipo==='entrada'?'+':'-') + x.quantidade + '</td>' +
             '<td style="padding:9px 12px;text-align:center;font-weight:700;font-size:14px;color:' + (saldoDesc?(x._saldo>=0?'var(--roxo)':'var(--vermelho)'):'var(--texto-suave)') + '">' + (saldoDesc?x._saldo:'—') + '</td>' +
-            '<td style="padding:9px 12px;font-size:11px;color:var(--texto-suave);max-width:180px;word-break:break-word">' + obsCurta + '</td>' +
+            
           '</tr>');
         }).join('')}
       </tbody>
