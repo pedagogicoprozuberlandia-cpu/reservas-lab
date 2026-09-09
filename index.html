@@ -217,6 +217,10 @@ textarea{height:80px;resize:none}
 
 <!-- MONITOR RESERVAS -->
 <div id="view-reservas" class="view">
+  <div style="margin-bottom:14px">
+    <button onclick="sincronizarHistorico()" style="padding:8px 16px;background:#F47920;color:white;border:none;border-radius:10px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">🔄 Sincronizar histórico de saídas</button>
+    <div style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:6px">Use uma vez para registrar saídas de reservas antigas já confirmadas.</div>
+  </div>
   <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
     <div class="metric"><div class="mv" id="m-p">—</div><div class="ml">Pendentes</div></div>
     <div class="metric"><div class="mv" id="m-c">—</div><div class="ml">Confirmadas</div></div>
@@ -616,6 +620,63 @@ function renderMatTabela(materiais){
     </tr></thead>
     <tbody>${linhas.join('')}</tbody>
   </table>`;
+}
+
+async function sincronizarHistorico(){
+  if(!confirm('Isso vai registrar as saídas de todas as reservas confirmadas que ainda não têm registro no histórico. Continuar?'))return;
+  
+  const btn=document.querySelector('button[onclick="sincronizarHistorico()"]');
+  btn.textContent='⏳ Sincronizando...';
+  btn.disabled=true;
+
+  // Buscar todas as reservas confirmadas
+  const r=await fetch(`${SB}/rest/v1/reservas?status=eq.Confirmada&select=*`,{headers:H});
+  const reservas=await r.json();
+  
+  // Buscar movimentações já existentes para não duplicar
+  const rm=await fetch(`${SB}/rest/v1/movimentacoes?tipo=eq.saida&select=disciplina`,{headers:H});
+  const movExist=await rm.json();
+  const obsExist=new Set(movExist.map(m=>m.disciplina));
+
+  let count=0;
+  for(const rv of reservas){
+    if(!rv.materiais)continue;
+    const partes=rv.materiais.split(' | Outros:');
+    const selecionados=partes[0].trim();
+    if(!selecionados)continue;
+    const[ano,mes,dia]=(rv.data||'').split('-');
+    const dataFmt=rv.data?`${dia}/${mes}/${ano}`:rv.data;
+    const obsKey=`${rv.laboratorio} — ${dataFmt} (${rv.periodo}) — ${rv.disciplina||''}`;
+    
+    // Pular se já foi sincronizado
+    if(obsExist.has(obsKey))continue;
+
+    const itens=selecionados.split(',').map(s=>s.trim()).filter(Boolean);
+    for(const item of itens){
+      const px=item.indexOf('x ');
+      if(px<0)continue;
+      const qtd=parseInt(item.substring(0,px));
+      const nomeMat=item.substring(px+2).trim();
+      const rm2=await fetch(`${SB}/rest/v1/materiais?nome=eq.${encodeURIComponent(nomeMat)}&select=*`,{headers:H});
+      const mats=await rm2.json();
+      if(!mats.length)continue;
+      const mat=mats[0];
+      if(mat.categoria!=='Descartável')continue;
+      // Registra saída no histórico sem descontar estoque (já foi descontado ou é retroativo)
+      await fetch(`${SB}/rest/v1/movimentacoes`,{method:'POST',headers:{...H,'Prefer':'return=minimal'},
+        body:JSON.stringify({material_id:mat.id,tipo:'saida',quantidade:qtd,professor:rv.professor,disciplina:obsKey})});
+      count++;
+    }
+  }
+
+  btn.textContent='✓ Sincronizado!';
+  btn.style.background='#27ae60';
+  setTimeout(()=>{
+    btn.textContent='🔄 Sincronizar histórico de saídas';
+    btn.style.background='#F47920';
+    btn.disabled=false;
+  },3000);
+  alert(`Sincronização concluída! ${count} registro${count!==1?'s':''} de saída adicionado${count!==1?'s':''}.`);
 }
 
 async function carregarRes(){
