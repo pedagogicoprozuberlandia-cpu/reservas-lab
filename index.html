@@ -553,7 +553,6 @@ function renderMatTabela(materiais){
   const selecionados=partes[0].trim();
   const outros=partes[1]?partes[1].trim():'';
   
-  // Buscar categoria de cada material no cache
   function getCat(nome){
     const m=matsCache.find(x=>x.nome===nome);
     return m?m.categoria:'';
@@ -564,10 +563,15 @@ function renderMatTabela(materiais){
     if(cat==='Manequim')return{bg:'#eeedfe',cor:'#534ab7',borda:'#afa9ec',txt:'Manequim'};
     return{bg:'#fef9ec',cor:'#8a6a00',borda:'#f5d87a',txt:'Outro'};
   }
+  function ordemCat(cat){
+    if(cat==='Descartável')return 1;
+    if(cat==='Reutilizável')return 2;
+    if(cat==='Manequim')return 3;
+    return 4;
+  }
 
-  const linhas=[];
+  const itens=[];
 
-  // Materiais selecionados da lista
   if(selecionados){
     selecionados.split(',').map(s=>s.trim()).filter(Boolean).forEach(item=>{
       const px=item.indexOf('x ');
@@ -575,16 +579,23 @@ function renderMatTabela(materiais){
       const qtd=item.substring(0,px);
       const nome=item.substring(px+2).trim();
       const cat=getCat(nome);
-      const c=chipCor(cat);
-      linhas.push(`<tr style="border-bottom:0.5px solid var(--cinza-borda)">
-        <td style="padding:7px 10px"><span style="background:${c.bg};color:${c.cor};border:0.5px solid ${c.borda};border-radius:20px;padding:3px 11px;font-size:12px;font-weight:500">${nome}</span></td>
-        <td style="padding:7px 10px;font-size:12px;color:${c.cor};font-weight:500">${c.txt}</td>
-        <td style="padding:7px 10px;text-align:center;font-weight:700;font-size:15px;color:var(--texto)">${qtd}</td>
-      </tr>`);
+      itens.push({qtd,nome,cat});
     });
   }
 
-  // Outros
+  // Ordenar: Descartável → Reutilizável → Manequim
+  itens.sort((a,b)=>ordemCat(a.cat)-ordemCat(b.cat));
+
+  const linhas=itens.map((it,i)=>{
+    const c=chipCor(it.cat);
+    const borda=i<itens.length-1||outros?'border-bottom:0.5px solid var(--cinza-borda)':'';
+    return`<tr style="${borda}">
+      <td style="padding:7px 10px"><span style="background:${c.bg};color:${c.cor};border:0.5px solid ${c.borda};border-radius:20px;padding:3px 11px;font-size:12px;font-weight:500">${it.nome}</span></td>
+      <td style="padding:7px 10px;font-size:12px;color:${c.cor};font-weight:500">${c.txt}</td>
+      <td style="padding:7px 10px;text-align:center;font-weight:700;font-size:15px;color:var(--texto)">${it.qtd}</td>
+    </tr>`;
+  });
+
   if(outros){
     linhas.push(`<tr style="background:#fef9ec"><td colspan="3" style="padding:5px 10px;font-size:11px;font-weight:600;color:#8a6a00;text-transform:uppercase;letter-spacing:.05em">Outros (solicitação livre)</td></tr>`);
     outros.split(',').map(s=>s.trim()).filter(Boolean).forEach(item=>{
