@@ -1156,11 +1156,12 @@ function desenharCalendario(){
     else if(temPend)bg='#fef9ec';
     
     const labs=['Laboratório 1','Laboratório 10'];
+    const labLabel={'Laboratório 1':'Lab01','Laboratório 10':'Lab10'};
     const dots=labs.map(lab=>{
       const res=resDodia.find(r=>r.laboratorio===lab);
-      if(!res)return `<span style="font-size:9px;color:#aaa">${lab.replace('Laboratório ','L')}</span>`;
+      if(!res)return `<span style="font-size:9px;color:#aaa">${labLabel[lab]}</span>`;
       const cor=res.status==='Confirmada'?'#e74c3c':res.status==='Pendente'?'#f39c12':'#aaa';
-      return `<span style="font-size:9px;color:${cor};font-weight:600">${lab.replace('Laboratório ','L')}</span>`;
+      return `<span style="font-size:9px;color:${cor};font-weight:600">${labLabel[lab]}</span>`;
     }).join(' ');
 
     html+=`<div class="cal-day ${isHoje?'cal-today':''}" style="background:${bg};border:1px solid #e2e0db" onclick="verDia('${dataStr}')">
@@ -1186,15 +1187,18 @@ function verDia(data){
   }
   detalhe.style.display='block';
   document.getElementById('cal-detalhe-content').innerHTML=`
-    <div style="font-size:13px;font-weight:700;color:#6B2D8B;margin-bottom:12px">📅 ${dia}/${mes}/${ano}</div>
-    ${res.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0ecfb;gap:8px">
+    <div style="font-size:13px;font-weight:700;color:#6B2D8B;margin-bottom:12px">📅 ${dia}/${mes}/${ano} — ${res.length} reserva${res.length>1?'s':''}</div>
+    ${res.map(r=>`
+    <div style="background:white;border:0.5px solid #e2e0db;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px">
       <div>
-        <div style="font-size:13px;font-weight:600">${periodoIcon[r.periodo]||''} ${r.periodo} — ${r.laboratorio}</div>
-        <div style="font-size:12px;color:#6b6860;margin-top:2px">${r.professor} · ${r.disciplina}</div>
-        ${r.materiais?`<div style="font-size:11px;color:#6b6860;margin-top:2px">📦 ${r.materiais}</div>`:''}
+        <div style="font-size:13px;font-weight:600;color:#1c1b18">${periodoIcon[r.periodo]||''} ${r.periodo} — ${r.laboratorio}</div>
+        <div style="font-size:12px;color:#6b6860;margin-top:3px">${r.professor}</div>
       </div>
-      <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;background:${statusColor[r.status]||'#ccc'}20;color:${statusColor[r.status]||'#666'};white-space:nowrap">${r.status}</span>
-    </div>`).join('')}`;
+      <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;background:${statusColor[r.status]||'#ccc'}20;color:${statusColor[r.status]||'#666'};border:0.5px solid ${statusColor[r.status]||'#ccc'}40;white-space:nowrap;flex-shrink:0">${r.status}</span>
+    </div>`).join('')}
+    <div style="margin-top:10px;background:#f0ecfb;border:0.5px solid #d4c5f5;border-radius:10px;padding:10px 14px;font-size:12px;color:#6B2D8B">
+      <span style="font-weight:600">⚠ Lembrete:</span> Verifique os materiais solicitados na aba <strong>Reservas</strong> antes de separar.
+    </div>`;
 }
 
 function mesAnterior(){
