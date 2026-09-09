@@ -778,11 +778,37 @@ function renderEst(){
   if(!fi.length){document.getElementById('lista-mat').innerHTML='<div class="empty">Nenhum material.</div>';return;}
   document.getElementById('lista-mat').innerHTML=fi.map((m,i)=>{
     const bx=m.categoria==='Descartável'&&m.quantidade<m.quantidade_minima;
-    return`<div class="mat-row" style="${i===fi.length-1?'border-bottom:none;padding-bottom:0':''}">
-      <div><div style="font-size:14px;font-weight:500">${m.nome}</div><div style="margin-top:4px"><span class="badge ${bc[m.categoria]||''}">${m.categoria}</span></div></div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span class="${bx?'q-low':'q-ok'}">${m.quantidade} un${bx?' ⚠':''}</span>
-        <button onclick="excMat(${m.id},'${m.nome}')" style="background:transparent;border:1px solid var(--cinza-borda);border-radius:8px;padding:5px 8px;cursor:pointer;color:var(--texto-suave);font-size:15px;line-height:1" title="Excluir material">🗑</button>
+    return`<div>
+      <div class="mat-row" style="${i===fi.length-1&&!true?'border-bottom:none;padding-bottom:0':''}">
+        <div style="flex:1"><div style="font-size:14px;font-weight:500">${m.nome}</div><div style="margin-top:4px"><span class="badge ${bc[m.categoria]||''}">${m.categoria}</span></div></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <span class="${bx?'q-low':'q-ok'}">${m.quantidade} un${bx?' ⚠':''}</span>
+          <button onclick="abrirEditar(${m.id})" title="Editar" style="background:transparent;border:1px solid var(--cinza-borda);border-radius:8px;padding:5px 8px;cursor:pointer;font-size:14px;line-height:1">✏️</button>
+          <button onclick="iniExcMat(${m.id})" title="Excluir" style="background:transparent;border:1px solid var(--cinza-borda);border-radius:8px;padding:5px 8px;cursor:pointer;font-size:14px;line-height:1">🗑</button>
+        </div>
+      </div>
+      <div id="edit-${m.id}" style="display:none;background:var(--cinza);border-radius:10px;padding:12px;margin-bottom:10px">
+        <div class="g2" style="margin-bottom:10px">
+          <div><label style="font-size:12px;color:var(--texto-suave);display:block;margin-bottom:4px">Nome</label>
+          <input type="text" id="en-${m.id}" value="${m.nome}" style="width:100%;padding:8px 12px;border:1px solid var(--cinza-borda);border-radius:8px;font-family:inherit;font-size:13px"></div>
+          <div><label style="font-size:12px;color:var(--texto-suave);display:block;margin-bottom:4px">Categoria</label>
+          <select id="ec-${m.id}" style="width:100%;padding:8px 12px;border:1px solid var(--cinza-borda);border-radius:8px;font-family:inherit;font-size:13px">
+            <option ${m.categoria==='Reutilizável'?'selected':''}>Reutilizável</option>
+            <option ${m.categoria==='Descartável'?'selected':''}>Descartável</option>
+            <option ${m.categoria==='Manequim'?'selected':''}>Manequim</option>
+          </select></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="salvarEdicao(${m.id})" style="padding:7px 16px;background:var(--roxo);color:white;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">Salvar</button>
+          <button onclick="document.getElementById('edit-${m.id}').style.display='none'" style="padding:7px 16px;background:transparent;border:1px solid var(--cinza-borda);border-radius:8px;font-family:inherit;font-size:13px;cursor:pointer;color:var(--texto-suave)">Cancelar</button>
+        </div>
+      </div>
+      <div id="excmat-${m.id}" style="display:none;background:var(--vermelho-claro);border-radius:10px;padding:12px;margin-bottom:10px">
+        <div style="font-size:13px;color:var(--vermelho);font-weight:500;margin-bottom:8px">Excluir "${m.nome}"?</div>
+        <div style="display:flex;gap:8px">
+          <button onclick="excMatConfirm(${m.id})" style="padding:6px 14px;background:var(--vermelho);color:white;border:none;border-radius:8px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">Sim, excluir</button>
+          <button onclick="document.getElementById('excmat-${m.id}').style.display='none'" style="padding:6px 14px;background:white;border:1px solid var(--cinza-borda);border-radius:8px;font-family:inherit;font-size:12px;cursor:pointer;color:var(--texto-suave)">Cancelar</button>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -794,6 +820,32 @@ async function excMat(id,nome){
   carregarMats();
 }
 function toggleMin(){const c=document.getElementById('nm-c').value;document.getElementById('nm-min-w').style.display=(c==='Manequim'||c==='Reutilizável')?'none':'block';}
+function abrirEditar(id){
+  document.querySelectorAll('[id^="edit-"]').forEach(el=>el.style.display='none');
+  document.querySelectorAll('[id^="excmat-"]').forEach(el=>el.style.display='none');
+  document.getElementById('edit-'+id).style.display='block';
+}
+function iniExcMat(id){
+  document.querySelectorAll('[id^="edit-"]').forEach(el=>el.style.display='none');
+  document.querySelectorAll('[id^="excmat-"]').forEach(el=>el.style.display='none');
+  document.getElementById('excmat-'+id).style.display='block';
+}
+async function salvarEdicao(id){
+  const nome=document.getElementById('en-'+id).value.trim();
+  const cat=document.getElementById('ec-'+id).value;
+  if(!nome){alert('Informe o nome.');return;}
+  const min=cat==='Descartável'?(matsCache.find(m=>m.id===id)?.quantidade_minima||5):0;
+  await fetch(`${SB}/rest/v1/materiais?id=eq.${id}`,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({nome,categoria:cat,quantidade_minima:min})});
+  document.getElementById('edit-'+id).style.display='none';
+  carregarMats();
+  carregarMatsTutor();
+}
+async function excMatConfirm(id){
+  await fetch(`${SB}/rest/v1/materiais?id=eq.${id}`,{method:'DELETE',headers:H});
+  carregarMats();
+  carregarMatsTutor();
+}
+
 async function cadMat(){
   const n=document.getElementById('nm-n').value.trim(),c=document.getElementById('nm-c').value,q=parseInt(document.getElementById('nm-q').value)||0,m=(c==='Manequim'||c==='Reutilizável')?0:parseInt(document.getElementById('nm-m').value)||5;
   if(!n){alert('Informe o nome do material.');return;}
