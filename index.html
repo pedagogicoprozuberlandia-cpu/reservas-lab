@@ -157,6 +157,7 @@ textarea{height:80px;resize:none}
   <button class="tab" onclick="setTab('estoque',this)">Estoque</button>
   <button class="tab" onclick="setTab('historico',this)">Histórico de uso</button>
   <button class="tab" onclick="setTab('tutores',this)">Tutores</button>
+  <button class="tab" onclick="setTab('laboratorios',this)">Laboratórios</button>
 </div>
 
 <!-- TUTOR -->
@@ -169,7 +170,6 @@ textarea{height:80px;resize:none}
         <div class="fg"><label>Laboratório</label>
           <select id="f-lab" onchange="vDisp()">
             <option value="">Selecione...</option>
-            <option>Laboratório 1</option><option>Laboratório 10</option>
           </select>
         </div>
         <div class="fg"><label>Data</label><input type="date" id="f-data" onchange="vDisp()"></div>
@@ -355,6 +355,17 @@ textarea{height:80px;resize:none}
 </div>
 <div class="card" id="lista-hist"><div class="loading">Carregando...</div></div>
 </div>
+<!-- LABORATÓRIOS -->
+<div id="view-laboratorios" class="view">
+  <div class="sec no-top">Laboratórios cadastrados</div>
+  <div class="card" id="lista-labs"><div class="loading">Carregando...</div></div>
+  <div class="sec">Cadastrar novo laboratório</div>
+  <div class="card">
+    <div class="fg"><label>Nome do laboratório</label><input type="text" id="nl-nome" placeholder="Ex: Laboratório 2"></div>
+    <button class="btn-r" onclick="cadLab()">Cadastrar laboratório</button>
+  </div>
+</div>
+
 </div>
 
 <script>
@@ -369,6 +380,7 @@ window.onload=()=>{
   document.getElementById('app').style.display='block';
   carregarMatsTutor();
   carregarTutoresSelect();
+  carregarLabs();
 };
 
 function setRole(r){
@@ -394,7 +406,7 @@ function pa(){pinAtual=pinAtual.slice(0,-1);upDots();}
 function upDots(){[0,1,2,3].forEach(i=>document.getElementById('d'+i).classList.toggle('f',i<pinAtual.length));}
 
 function setTab(t,btn){
-  ['reservas','estoque','historico','tutores','calendario'].forEach(v=>document.getElementById('view-'+v).classList.remove('active'));
+  ['reservas','estoque','historico','tutores','calendario','laboratorios'].forEach(v=>document.getElementById('view-'+v).classList.remove('active'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+t).classList.add('active');
   if(btn)btn.classList.add('active');
@@ -1299,6 +1311,75 @@ async function gerarPDF(){
   }
 
   doc.save(`Relatorio_Lab_${periodo.replace(' ','_')}.pdf`);
+}
+
+
+// LABORATÓRIOS
+let labsCache=[];
+async function carregarLabs(){
+  document.getElementById('lista-labs').innerHTML='<div class="loading">Carregando...</div>';
+  const r=await fetch(`${SB}/rest/v1/laboratorios?select=*&order=nome`,{headers:H});
+  labsCache=await r.json();
+  renderLabs();
+  popularSelectLab();
+}
+function renderLabs(){
+  if(!labsCache.length){document.getElementById('lista-labs').innerHTML='<div class="empty">Nenhum laboratório cadastrado.</div>';return;}
+  document.getElementById('lista-labs').innerHTML=labsCache.map((l,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;${i===labsCache.length-1?'border-bottom:none':'border-bottom:1px solid var(--cinza-borda)'}">
+      <div style="font-size:14px;font-weight:500;color:var(--texto)">${l.nome}</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="editarLab(${l.id},'${l.nome.replace(/'/g,"\'")}')" style="background:transparent;border:1px solid var(--cinza-borda);border-radius:8px;padding:5px 8px;cursor:pointer;font-size:14px" title="Editar">✏️</button>
+        <button onclick="excLab(${l.id},'${l.nome.replace(/'/g,"\'")}')" style="background:transparent;border:1px solid var(--cinza-borda);border-radius:8px;padding:5px 8px;cursor:pointer;font-size:14px" title="Excluir">🗑</button>
+      </div>
+    </div>
+    <div id="editlab-${l.id}" style="display:none;background:var(--cinza);border-radius:10px;padding:12px;margin-bottom:8px">
+      <div class="fg"><label>Nome do laboratório</label><input type="text" id="eln-${l.id}" value="${l.nome}" style="width:100%;padding:8px 12px;border:1px solid var(--cinza-borda);border-radius:8px;font-family:inherit;font-size:13px"></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="salvarLab(${l.id})" style="padding:7px 16px;background:var(--roxo);color:white;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">Salvar</button>
+        <button onclick="document.getElementById('editlab-${l.id}').style.display='none'" style="padding:7px 16px;background:transparent;border:1px solid var(--cinza-borda);border-radius:8px;font-family:inherit;font-size:13px;cursor:pointer;color:var(--texto-suave)">Cancelar</button>
+      </div>
+    </div>
+    <div id="exclab-${l.id}" style="display:none;background:var(--vermelho-claro);border-radius:10px;padding:12px;margin-bottom:8px">
+      <div style="font-size:13px;color:var(--vermelho);font-weight:500;margin-bottom:8px">Excluir "${l.nome}"?</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="excLabConfirm(${l.id})" style="padding:6px 14px;background:var(--vermelho);color:white;border:none;border-radius:8px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">Sim, excluir</button>
+        <button onclick="document.getElementById('exclab-${l.id}').style.display='none'" style="padding:6px 14px;background:white;border:1px solid var(--cinza-borda);border-radius:8px;font-family:inherit;font-size:12px;cursor:pointer;color:var(--texto-suave)">Cancelar</button>
+      </div>
+    </div>`).join('');
+}
+function popularSelectLab(){
+  const sel=document.getElementById('f-lab');
+  if(!sel)return;
+  sel.innerHTML='<option value="">Selecione...</option>'+labsCache.map(l=>`<option>${l.nome}</option>`).join('');
+}
+async function cadLab(){
+  const nome=document.getElementById('nl-nome').value.trim();
+  if(!nome){alert('Informe o nome do laboratório.');return;}
+  await fetch(`${SB}/rest/v1/laboratorios`,{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({nome})});
+  document.getElementById('nl-nome').value='';
+  carregarLabs();
+}
+function editarLab(id,nome){
+  document.querySelectorAll('[id^="editlab-"]').forEach(el=>el.style.display='none');
+  document.querySelectorAll('[id^="exclab-"]').forEach(el=>el.style.display='none');
+  document.getElementById('editlab-'+id).style.display='block';
+}
+async function salvarLab(id){
+  const nome=document.getElementById('eln-'+id).value.trim();
+  if(!nome){alert('Informe o nome.');return;}
+  await fetch(`${SB}/rest/v1/laboratorios?id=eq.${id}`,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({nome})});
+  document.getElementById('editlab-'+id).style.display='none';
+  carregarLabs();
+}
+function excLab(id,nome){
+  document.querySelectorAll('[id^="editlab-"]').forEach(el=>el.style.display='none');
+  document.querySelectorAll('[id^="exclab-"]').forEach(el=>el.style.display='none');
+  document.getElementById('exclab-'+id).style.display='block';
+}
+async function excLabConfirm(id){
+  await fetch(`${SB}/rest/v1/laboratorios?id=eq.${id}`,{method:'DELETE',headers:H});
+  carregarLabs();
 }
 
 </script>
