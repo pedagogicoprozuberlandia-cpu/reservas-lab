@@ -810,6 +810,10 @@ function renderEst(){
             <option ${m.categoria==='Manequim'?'selected':''}>Manequim</option>
           </select></div>
         </div>
+        <div class="g2" style="margin-bottom:10px">
+          <div><label style="font-size:12px;color:var(--texto-suave);display:block;margin-bottom:4px">Quantidade atual</label>
+          <input type="number" id="eq-${m.id}" value="${m.quantidade}" min="0" style="width:100%;padding:8px 12px;border:1px solid var(--cinza-borda);border-radius:8px;font-family:inherit;font-size:13px"></div>
+        </div>
         <div style="display:flex;gap:8px">
           <button onclick="salvarEdicao(${m.id})" style="padding:7px 16px;background:var(--roxo);color:white;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">Salvar</button>
           <button onclick="document.getElementById('edit-${m.id}').style.display='none'" style="padding:7px 16px;background:transparent;border:1px solid var(--cinza-borda);border-radius:8px;font-family:inherit;font-size:13px;cursor:pointer;color:var(--texto-suave)">Cancelar</button>
@@ -845,9 +849,10 @@ function iniExcMat(id){
 async function salvarEdicao(id){
   const nome=document.getElementById('en-'+id).value.trim();
   const cat=document.getElementById('ec-'+id).value;
+  const qty=parseInt(document.getElementById('eq-'+id).value)||0;
   if(!nome){alert('Informe o nome.');return;}
   const min=cat==='Descartável'?(matsCache.find(m=>m.id===id)?.quantidade_minima||5):0;
-  await fetch(`${SB}/rest/v1/materiais?id=eq.${id}`,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({nome,categoria:cat,quantidade_minima:min})});
+  await fetch(`${SB}/rest/v1/materiais?id=eq.${id}`,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({nome,categoria:cat,quantidade:qty,quantidade_minima:min})});
   document.getElementById('edit-'+id).style.display='none';
   carregarMats();
   carregarMatsTutor();
